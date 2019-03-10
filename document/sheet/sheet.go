@@ -111,6 +111,10 @@ func (s *Sheet) Cell(x, y int) *Cell {
 	return nil
 }
 
+func (s *Sheet) CellUnderCursor() *Cell {
+	return s.Cell(s.Cursor.X, s.Cursor.Y)
+}
+
 func (s *Sheet) SetCell(x, y int, cell *Cell) {
 	segment := s.FindSegment(x, y)
 	if segment == nil {
@@ -132,17 +136,3 @@ func (s *Sheet) FindSegment(x, y int) Segment {
 	}
 	return nil
 }
-
-//func (s *Sheet) WriteCells(x, y int, cells [][]Cell) {
-//	if len(cells) == 0 || len(cells[0]) == 0 {
-//		return
-//	}
-//	Segments := s.findSegmentsForRect(x, y, x+len(cells[0]), y+len(cells))
-//}
-//
-//func (s *Sheet) findSegmentsForRect(x, y, w, h int) []*Segment {
-//	var Segments []*Segment
-//	for _,Segment := range s.Segments {
-//		if Segment.Contains(x,y)
-//	}
-//}

@@ -39,3 +39,8 @@ func (c *Cell) SetValueText(v string) {
 	c.valueType = CellValueTypeText
 	c.staticValue = v
 }
+
+func (c *Cell) EraseValue() {
+	// TODO: other types of values
+	c.staticValue = ""
+}

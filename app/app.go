@@ -1,23 +1,36 @@
 package app
 
 import (
-	"errors"
 	"xl/document"
+	"xl/document/sheet"
 	"xl/fs"
 	"xl/fs/bufcsv"
 	"xl/ui"
 
+	"errors"
+	"io/ioutil"
+	"os"
+	"strings"
+
 	"go.uber.org/zap"
+)
+
+const (
+	rcFile = ".xlrc"
 )
 
 type App struct {
 	ui.DataDelegateInterface
 
-	logger *zap.Logger
-	input  ui.InputInterface
-	output ui.OutputInterface
-	doc    *document.Document
-	file   fs.FileInterface
+	logger  *zap.Logger
+	input   ui.InputInterface
+	output  ui.OutputInterface
+	doc     *document.Document
+	file    fs.FileInterface
+	hotKeys map[Key]string
+
+	// Keeps the cell for copy/cut/paste operations.
+	cellBuffer *sheet.Cell
 }
 
 type Config struct {
@@ -28,20 +41,24 @@ type Config struct {
 
 func New(config *Config) *App {
 	a := &App{
-		logger: config.Logger,
-		input:  config.Input,
-		output: config.Output,
+		logger:  config.Logger,
+		input:   config.Input,
+		output:  config.Output,
+		hotKeys: make(map[Key]string),
 	}
 	a.output.SetDataDelegate(a)
+	a.loadRC()
 	return a
 }
 
+// ResetDocument creates a new empty document.
 func (a *App) ResetDocument() {
 	a.doc = document.NewWithEmptySheet()
 	a.output.SetDataDelegate(a)
 	a.output.RefreshView()
 }
 
+// OpenDocument reads document from file with given name.
 func (a *App) OpenDocument(filename string) error {
 	a.file = bufcsv.NewWithFilename(filename)
 	var err error
@@ -60,6 +77,7 @@ func (a *App) OpenDocument(filename string) error {
 	return nil
 }
 
+// Write writes document to the same file it was read from.
 func (a *App) Write() error {
 	if a.file == nil {
 		return errors.New("no file name")
@@ -67,6 +85,7 @@ func (a *App) Write() error {
 	return a.WriteAs("")
 }
 
+// WriteAs writes document to file with given name.
 func (a *App) WriteAs(filename string) error {
 	if filename != "" {
 		a.file = bufcsv.NewWithFilename(filename)
@@ -74,6 +93,7 @@ func (a *App) WriteAs(filename string) error {
 	return a.file.Write(a.doc)
 }
 
+// Loop is the main loop, reads and processes key presses.
 func (a *App) Loop() {
 	for {
 		event, err := a.input.ReadKey()
@@ -93,6 +113,23 @@ func (a *App) Loop() {
 	}
 }
 
-func (a *App) ShowError(err error) {
+// showErrors displays error message in status line.
+func (a *App) showError(err error) {
 	a.output.SetStatus(err.Error(), ui.StatusFlagError)
+}
+
+// loadRC reads rc file containing commands to be executed on launch.
+func (a *App) loadRC() {
+	rcLocation := os.Getenv("HOME") + "/" + rcFile
+	data, err := ioutil.ReadFile(rcLocation)
+	if err != nil {
+		a.showError(err)
+		return
+	}
+	for _, l := range strings.Split(string(data), "\n") {
+		if l == "" {
+			continue
+		}
+		a.processCommand(l)
+	}
 }

@@ -1,9 +1,10 @@
 package app
 
 import (
-	"fmt"
 	"xl/document/sheet"
 	"xl/ui"
+
+	"fmt"
 
 	"github.com/nsf/termbox-go"
 )
@@ -40,6 +41,7 @@ func (a *App) processKeyEvent(event ui.KeyEvent) bool {
 		a.output.RefreshView()
 	default:
 		a.output.SetStatus(fmt.Sprintf("ch: %v, key: %v", event.Ch, event.Key), 0)
+		a.runHotKey(Key{event.Mod, event.Key, event.Ch})
 		a.output.RefreshView()
 	}
 
@@ -105,7 +107,7 @@ func (a *App) pageDown() bool {
 func (a *App) inputCommand() bool {
 	command, err := a.output.InputCommand()
 	if err != nil {
-		a.ShowError(err)
+		a.showError(err)
 		return false
 	}
 	a.output.SetStatus("", 0)
@@ -130,4 +132,15 @@ func (a *App) editCell() {
 	cell.SetValueText(newValue)
 	a.doc.CurrentSheet.SetCell(cur.X, cur.Y, cell)
 	a.output.SetDirty(ui.DirtyGrid | ui.DirtyFormulaLine)
+}
+
+func (a *App) runHotKey(k Key) bool {
+	c, ok := a.hotKeys[k]
+	if !ok {
+		return false
+	}
+	a.output.SetStatus("", 0)
+	stop := a.processCommand(c)
+	a.output.SetDirty(ui.DirtyStatusLine)
+	return stop
 }

@@ -27,10 +27,39 @@ func (a *App) processCommand(c string) bool {
 		a.cmdNewSheet(arg1(args))
 	case "ns", "nextSheet":
 		a.cmdNextSheet()
+	case "bind":
+		a.cmdBind(args)
+	case "cutCell":
+		a.cmdCutCell()
+	case "pasteCell":
+		a.cmdPasteCell()
+	case "copyCell":
+		a.cmdCopyCell()
 	default:
 		a.output.SetStatus(fmt.Sprintf("unknown command %s", c), ui.StatusFlagError)
 	}
 	return false
+}
+
+// arg1 returns first argument or empty string.
+func arg1(args []string) string {
+	return argN(args, 1)
+}
+
+// argN returns Nth argument or empty string.
+func argN(args []string, n int) string {
+	if len(args) >= n {
+		return args[n-1]
+	}
+	return ""
+}
+
+// parseArgs splits raw command line into command itself and list of command arguments.
+// TODO: arguments can possibly be wrapped in quotes
+func parseArgs(cmd string) (string, []string) {
+	// FIXME: naive implementation
+	c := strings.Split(cmd, " ")
+	return c[0], c[1:]
 }
 
 // cmdResizeColumn resizes column under cursor so its width becomes given N pixels.
@@ -50,7 +79,7 @@ func (a *App) cmdWrite(filename string) {
 		err = a.Write()
 	}
 	if err != nil {
-		a.ShowError(err)
+		a.showError(err)
 	}
 }
 
@@ -76,23 +105,46 @@ func (a *App) cmdNextSheet() {
 	a.output.SetDirty(ui.DirtyStatusLine | ui.DirtyGrid | ui.DirtyFormulaLine)
 }
 
-// arg1 returns first argument or empty string.
-func arg1(args []string) string {
-	return argN(args, 1)
-}
-
-// argN returns Nth argument or empty string.
-func argN(args []string, n int) string {
-	if len(args) >= n {
-		return args[n-1]
+// cmdBind binds a command to a hot key.
+func (a *App) cmdBind(args []string) {
+	if len(args) < 2 {
+		a.output.SetStatus("hot key and command must be specified", ui.StatusFlagError)
+		return
 	}
-	return ""
+	k, ok := HotKeys[args[0]]
+	if !ok {
+		a.output.SetStatus(fmt.Sprintf("key %s is not a valid key", args[0]), ui.StatusFlagError)
+		return
+	}
+	// TODO: escape with quotes
+	a.hotKeys[k] = strings.Join(args[1:], " ")
 }
 
-// parseArgs splits raw command line into command itself and list of command arguments.
-// TODO: arguments can possibly be wrapped in quotes
-func parseArgs(cmd string) (string, []string) {
-	// FIXME: naive implementation
-	c := strings.Split(cmd, " ")
-	return c[0], c[1:]
+// cmdCutCell erases the cell (but puts its value to buffer first).
+func (a *App) cmdCutCell() {
+	a.cmdCopyCell()
+	a.doc.CurrentSheet.CellUnderCursor().EraseValue()
+	a.output.SetDirty(ui.DirtyGrid | ui.DirtyFormulaLine)
+}
+
+// cmdCopyCell copies cell value to the buffer.
+func (a *App) cmdCopyCell() {
+	cell := a.doc.CurrentSheet.CellUnderCursor()
+	if cell == nil {
+		cell = sheet.NewCellGeneral()
+	}
+	cellCopy := *cell
+	a.cellBuffer = &cellCopy
+}
+
+// cmdPasteCell replace cell under cursor with the value of previously copied or cut cell.
+func (a *App) cmdPasteCell() {
+	if a.cellBuffer == nil {
+		a.output.SetStatus("buffer is empty", ui.StatusFlagError)
+		return
+	}
+	cellCopy := *a.cellBuffer
+	s := a.doc.CurrentSheet
+	s.SetCell(s.Cursor.X, s.Cursor.Y, &cellCopy)
+	a.output.SetDirty(ui.DirtyGrid | ui.DirtyFormulaLine)
 }
