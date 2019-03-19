@@ -8,6 +8,7 @@ import (
 	"github.com/nsf/termbox-go"
 )
 
+// ReadKey blocks until new key is read. Returns the key read.
 func (t *Termbox) ReadKey() (ui.InputEventInterface, error) {
 	event := termbox.PollEvent()
 	if event.Type == termbox.EventKey {

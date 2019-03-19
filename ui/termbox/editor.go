@@ -380,6 +380,7 @@ func (e *editor) adjustWindow() {
 	} else if e.window.firstRune > e.cursor.offsetRunes {
 		e.window.firstRune = e.cursor.offsetRunes
 	}
+	// TODO: adjust vertical position
 	//if e.cursor.lineNum
 }
 

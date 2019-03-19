@@ -122,14 +122,14 @@ func (a *App) editCell() {
 	cur := a.doc.CurrentSheet.Cursor
 	cell := a.doc.CurrentSheet.Cell(cur.X, cur.Y)
 	if cell == nil {
-		cell = sheet.NewCellGeneral()
+		cell = sheet.NewCellEmpty(a.doc)
 	}
-	newValue, err := a.output.EditCellValue(cell.Value())
+	newValue, err := a.output.EditCellValue(cell.RawValue())
 	if err != nil {
 		a.logger.Error(err.Error())
 		return
 	}
-	cell.SetValueText(newValue)
+	cell.SetValueUntyped(newValue)
 	a.doc.CurrentSheet.SetCell(cur.X, cur.Y, cell)
 	a.output.SetDirty(ui.DirtyGrid | ui.DirtyFormulaLine)
 }

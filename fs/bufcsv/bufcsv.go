@@ -13,11 +13,13 @@ import (
 type BufCSV struct {
 	fs.FileInterface
 	filename string
+	comma    rune
 }
 
 func NewWithFilename(filename string) *BufCSV {
 	return &BufCSV{
 		filename: filename,
+		comma:    ',',
 	}
 }
 
@@ -34,7 +36,9 @@ func (b *BufCSV) Open() (*document.Document, error) {
 
 	// TODO: how to make it variable? Auto detection?
 	r.Comma = ';'
+	b.comma = r.Comma
 
+	// FIXME: read line-by-line
 	data, err := r.ReadAll()
 	if err != nil {
 		return nil, err
@@ -52,21 +56,20 @@ func (b *BufCSV) Open() (*document.Document, error) {
 		width = len(row)
 	}
 
+	d := document.New()
+
 	// make cells & transpose
 	cells := make([][]sheet.Cell, width)
 	for x := 0; x < width; x++ {
 		cells[x] = make([]sheet.Cell, height)
 		for y := 0; y < height; y++ {
-			cells[x][y] = *sheet.NewCellText(data[y][x])
+			cells[x][y] = *sheet.NewCellUntyped(d, data[y][x])
 		}
 	}
 
 	// make a sheet
-	s := sheet.New(b.filename)
+	s, _ := d.NewSheet(b.filename)
 	s.AddStaticSegment(0, 0, width, height, cells)
-
-	d := document.New()
-	d.Sheets = []*sheet.Sheet{s}
 	return d, nil
 }
 
@@ -83,8 +86,8 @@ func (b *BufCSV) Write(doc *document.Document) error {
 	w := csv.NewWriter(file)
 	defer w.Flush()
 
-	// TODO: how to make it variable?
-	w.Comma = ';'
+	// the same as on reading
+	w.Comma = b.comma
 
 	s := doc.CurrentSheet
 	row := make([]string, s.Size.X+s.Size.Width)
@@ -115,8 +118,8 @@ func (b *BufCSV) Write(doc *document.Document) error {
 			}
 			size := segment.Size()
 			// copy cells from found segment into row
-			for x < size.Right() {
-				row[x] = segment.Cell(x, y).DisplayText()
+			for x <= size.MaxX() {
+				row[x], _ = segment.Cell(x, y).StringValue()
 				x++
 			}
 		}

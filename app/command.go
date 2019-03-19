@@ -85,12 +85,11 @@ func (a *App) cmdWrite(filename string) {
 
 // cmdNewList creates a new sheet.
 func (a *App) cmdNewSheet(title string) {
-	// FIXME: title must be unique
-	if title == "" {
-		title = fmt.Sprintf("Sheet %d", len(a.doc.Sheets)+1)
+	_, err := a.doc.NewSheet(title)
+	if err != nil {
+		a.showError(err)
+		return
 	}
-	s := sheet.New(title)
-	a.doc.Sheets = append(a.doc.Sheets, s)
 	a.output.SetDirty(ui.DirtyStatusLine)
 }
 
@@ -131,7 +130,7 @@ func (a *App) cmdCutCell() {
 func (a *App) cmdCopyCell() {
 	cell := a.doc.CurrentSheet.CellUnderCursor()
 	if cell == nil {
-		cell = sheet.NewCellGeneral()
+		cell = sheet.NewCellEmpty(a.doc)
 	}
 	cellCopy := *cell
 	a.cellBuffer = &cellCopy

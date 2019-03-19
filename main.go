@@ -2,6 +2,7 @@ package main
 
 import (
 	"xl/app"
+	"xl/log"
 	"xl/ui/termbox"
 
 	"flag"
@@ -14,6 +15,8 @@ func main() {
 	defer func() {
 		_ = logger.Sync()
 	}()
+
+	log.L = logger
 
 	logger.Info("application starting")
 

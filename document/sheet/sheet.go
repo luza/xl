@@ -24,16 +24,19 @@ type Rect struct {
 	Height int
 }
 
-func (r *Rect) Right() int {
-	return r.X + r.Width
+// MaxX returns maximum X belonging to rect.
+func (r *Rect) MaxX() int {
+	return r.X + r.Width - 1
 }
 
-func (r *Rect) Bottom() int {
-	return r.Y + r.Height
+// MaxY returns maximum Y belonging to rect.
+func (r *Rect) MaxY() int {
+	return r.Y + r.Height - 1
 }
 
 type Sheet struct {
-	Name     string
+	Idx      int
+	Title    string
 	Cursor   Cursor
 	Viewport Viewport
 	Size     Rect
@@ -43,9 +46,10 @@ type Sheet struct {
 	rowSizes map[int]int
 }
 
-func New(name string) *Sheet {
+func New(idx int, name string) *Sheet {
 	return &Sheet{
-		Name:     name,
+		Idx:      idx,
+		Title:    name,
 		Cursor:   Cursor{0, 0},
 		Viewport: Viewport{0, 0},
 		Size:     Rect{0, 0, 0, 0},
@@ -55,6 +59,7 @@ func New(name string) *Sheet {
 	}
 }
 
+// ColSize returns width of a column in pixels.
 func (s *Sheet) ColSize(n int) int {
 	if val, ok := s.colSizes[n]; ok {
 		return val
@@ -62,6 +67,7 @@ func (s *Sheet) ColSize(n int) int {
 	return CellDefaultWidth
 }
 
+// SetColSize sets the new width for a column in pixels.
 func (s *Sheet) SetColSize(n, size int) {
 	if size < 1 || size > CellMaxWidth {
 		return
@@ -69,6 +75,7 @@ func (s *Sheet) SetColSize(n, size int) {
 	s.colSizes[n] = size
 }
 
+// RowSize returns height of a row in pixels.
 func (s *Sheet) RowSize(n int) int {
 	if val, ok := s.rowSizes[n]; ok {
 		return val
@@ -76,12 +83,13 @@ func (s *Sheet) RowSize(n int) int {
 	return CellDefaultHeight
 }
 
+// AddStaticSegment creates a new Static segment and will with the given cells matrix.
+// TODO: check intersections. Will be such a case?
+// TODO: new segment need to be merged with the existing if possible
 func (s *Sheet) AddStaticSegment(x, y, width, height int, cells [][]Cell) Segment {
 	if len(cells) == 0 || len(cells[0]) == 0 {
 		return nil
 	}
-	// TODO: check intersections?
-	// TODO: check merge possible
 	segment := newStaticSegment(x, y, width, height, cells)
 	s.Segments = append(s.Segments, segment)
 
@@ -102,6 +110,7 @@ func (s *Sheet) AddStaticSegment(x, y, width, height int, cells [][]Cell) Segmen
 	return segment
 }
 
+// Cell returns the cell for given X and Y.
 func (s *Sheet) Cell(x, y int) *Cell {
 	for _, segment := range s.Segments {
 		if segment.Contains(x, y) {
@@ -111,10 +120,13 @@ func (s *Sheet) Cell(x, y int) *Cell {
 	return nil
 }
 
+// CellUnderCursor returns the cell the cursor points to.
 func (s *Sheet) CellUnderCursor() *Cell {
 	return s.Cell(s.Cursor.X, s.Cursor.Y)
 }
 
+// SetCell fills the cell with new data.
+// If no such cell exists yet, created a new segment.
 func (s *Sheet) SetCell(x, y int, cell *Cell) {
 	segment := s.FindSegment(x, y)
 	if segment == nil {
@@ -128,6 +140,7 @@ func (s *Sheet) SetCell(x, y int, cell *Cell) {
 	}
 }
 
+// FindSegment iterates over segments to find the one containing cell with given X and Y.
 func (s *Sheet) FindSegment(x, y int) Segment {
 	for _, segment := range s.Segments {
 		if segment.Contains(x, y) {
