@@ -2,7 +2,8 @@ package formula
 
 import (
 	"testing"
-	"xl/formula/value"
+
+	"xl/document/value"
 
 	"github.com/shopspring/decimal"
 )

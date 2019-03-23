@@ -23,9 +23,9 @@ func (a *App) processCommand(c string) bool {
 		a.cmdResizeColumn(1)
 	case "narrower":
 		a.cmdResizeColumn(-1)
-	case "as", "appendSheet":
+	case "appendSheet":
 		a.cmdNewSheet(arg1(args))
-	case "ns", "nextSheet":
+	case "nextSheet":
 		a.cmdNextSheet()
 	case "bind":
 		a.cmdBind(args)
@@ -35,6 +35,18 @@ func (a *App) processCommand(c string) bool {
 		a.cmdPasteCell()
 	case "copyCell":
 		a.cmdCopyCell()
+	case "insertRow":
+		a.cmdInsertRow(0)
+	case "insertRowAfter":
+		a.cmdInsertRow(1)
+	case "insertCol":
+		a.cmdInsertCol(0)
+	case "insertColAfter":
+		a.cmdInsertCol(1)
+	case "deleteRow":
+		a.cmdDeleteRow()
+	case "deleteCol":
+		a.cmdDeleteCol()
 	default:
 		a.output.SetStatus(fmt.Sprintf("unknown command %s", c), ui.StatusFlagError)
 	}
@@ -130,7 +142,7 @@ func (a *App) cmdCutCell() {
 func (a *App) cmdCopyCell() {
 	cell := a.doc.CurrentSheet.CellUnderCursor()
 	if cell == nil {
-		cell = sheet.NewCellEmpty(a.doc)
+		cell = sheet.NewCellEmpty()
 	}
 	cellCopy := *cell
 	a.cellBuffer = &cellCopy
@@ -145,5 +157,27 @@ func (a *App) cmdPasteCell() {
 	cellCopy := *a.cellBuffer
 	s := a.doc.CurrentSheet
 	s.SetCell(s.Cursor.X, s.Cursor.Y, &cellCopy)
+	a.output.SetDirty(ui.DirtyGrid | ui.DirtyFormulaLine)
+}
+
+func (a *App) cmdInsertRow(n int) {
+	a.doc.CurrentSheet.Cursor.Y += n
+	a.doc.CurrentSheet.InsertRow(a.doc.CurrentSheet.Cursor.Y)
+	a.output.SetDirty(ui.DirtyGrid | ui.DirtyFormulaLine)
+}
+
+func (a *App) cmdInsertCol(n int) {
+	a.doc.CurrentSheet.Cursor.X += n
+	a.doc.CurrentSheet.InsertCol(a.doc.CurrentSheet.Cursor.X)
+	a.output.SetDirty(ui.DirtyGrid | ui.DirtyFormulaLine)
+}
+
+func (a *App) cmdDeleteRow() {
+	a.doc.CurrentSheet.DeleteRow(a.doc.CurrentSheet.Cursor.Y)
+	a.output.SetDirty(ui.DirtyGrid | ui.DirtyFormulaLine)
+}
+
+func (a *App) cmdDeleteCol() {
+	a.doc.CurrentSheet.DeleteCol(a.doc.CurrentSheet.Cursor.X)
 	a.output.SetDirty(ui.DirtyGrid | ui.DirtyFormulaLine)
 }

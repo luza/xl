@@ -16,7 +16,7 @@ func (a *App) CellView(x, y int) *ui.CellView {
 			Name: cellName(x, y),
 		}
 	}
-	v, _ := c.StringValue()
+	v, _ := c.StringValue(a.doc)
 	return &ui.CellView{
 		Name:        cellName(x, y),
 		DisplayText: v,

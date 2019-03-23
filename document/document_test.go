@@ -8,13 +8,13 @@ func TestCellNameToXY(t *testing.T) {
 		x    int
 		y    int
 	}{
-		{`A1`, 1, 1},
-		{`B1`, 2, 1},
-		{`B2`, 2, 2},
-		{`Z1`, 26, 1},
-		{`AA1`, 27, 1},
-		{`AB1`, 28, 1},
-		{`AAA999`, 703, 999},
+		{`A1`, 0, 0},
+		{`B1`, 1, 0},
+		{`B2`, 1, 1},
+		{`Z1`, 25, 0},
+		{`AA1`, 26, 0},
+		{`AB1`, 27, 0},
+		{`AAA999`, 702, 998},
 	}
 	for _, c := range testCases {
 		x, y, err := cellNameToXY(c.name)

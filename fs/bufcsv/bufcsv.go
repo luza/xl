@@ -63,7 +63,7 @@ func (b *BufCSV) Open() (*document.Document, error) {
 	for x := 0; x < width; x++ {
 		cells[x] = make([]sheet.Cell, height)
 		for y := 0; y < height; y++ {
-			cells[x][y] = *sheet.NewCellUntyped(d, data[y][x])
+			cells[x][y] = *sheet.NewCellUntyped(data[y][x])
 		}
 	}
 
@@ -119,7 +119,7 @@ func (b *BufCSV) Write(doc *document.Document) error {
 			size := segment.Size()
 			// copy cells from found segment into row
 			for x <= size.MaxX() {
-				row[x], _ = segment.Cell(x, y).StringValue()
+				row[x], _ = segment.Cell(x, y).StringValue(doc)
 				x++
 			}
 		}

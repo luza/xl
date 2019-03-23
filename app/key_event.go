@@ -122,7 +122,7 @@ func (a *App) editCell() {
 	cur := a.doc.CurrentSheet.Cursor
 	cell := a.doc.CurrentSheet.Cell(cur.X, cur.Y)
 	if cell == nil {
-		cell = sheet.NewCellEmpty(a.doc)
+		cell = sheet.NewCellEmpty()
 	}
 	newValue, err := a.output.EditCellValue(cell.RawValue())
 	if err != nil {

@@ -59,7 +59,7 @@ func (d *Document) Value(sheetIdx, x, y int) (value.Value, error) {
 	if c == nil {
 		return value.Value{}, nil
 	}
-	return c.Value()
+	return c.Value(d)
 }
 
 func (d *Document) BoolValue(sheetIdx, x, y int) (bool, error) {
@@ -71,7 +71,7 @@ func (d *Document) BoolValue(sheetIdx, x, y int) (bool, error) {
 	if c == nil {
 		return false, nil
 	}
-	return c.BoolValue()
+	return c.BoolValue(d)
 }
 
 func (d *Document) DecimalValue(sheetIdx, x, y int) (decimal.Decimal, error) {
@@ -83,7 +83,7 @@ func (d *Document) DecimalValue(sheetIdx, x, y int) (decimal.Decimal, error) {
 	if c == nil {
 		return decimal.Zero, nil
 	}
-	return c.DecimalValue()
+	return c.DecimalValue(d)
 }
 
 func (d *Document) StringValue(sheetIdx, x, y int) (string, error) {
@@ -95,5 +95,5 @@ func (d *Document) StringValue(sheetIdx, x, y int) (string, error) {
 	if c == nil {
 		return "", nil
 	}
-	return c.StringValue()
+	return c.StringValue(d)
 }

@@ -28,8 +28,6 @@ const (
 )
 
 type Cell struct {
-	dataDelegate value.LinkRegistryInterface
-
 	valueType int
 	errorType int
 
@@ -44,18 +42,15 @@ type Cell struct {
 	args []value.Value
 }
 
-func NewCellEmpty(dd value.LinkRegistryInterface) *Cell {
+func NewCellEmpty() *Cell {
 	return &Cell{
-		dataDelegate: dd,
-		valueType:    CellValueTypeEmpty,
-		errorType:    CellErrorTypeNoError,
+		valueType: CellValueTypeEmpty,
+		errorType: CellErrorTypeNoError,
 	}
 }
 
-func NewCellUntyped(dd value.LinkRegistryInterface, v string) *Cell {
-	c := &Cell{
-		dataDelegate: dd,
-	}
+func NewCellUntyped(v string) *Cell {
+	c := &Cell{}
 	c.SetValueUntyped(v)
 	return c
 }
@@ -76,9 +71,9 @@ func (c *Cell) RawValue() string {
 	return c.rawValue
 }
 
-func (c *Cell) BoolValue() (bool, error) {
+func (c *Cell) BoolValue(dd value.LinkRegistryInterface) (bool, error) {
 	if c.valueType == CellValueUntyped {
-		c.evaluateType()
+		c.evaluateType(dd)
 	}
 	switch c.valueType {
 	case CellValueTypeEmpty:
@@ -106,9 +101,9 @@ func (c *Cell) BoolValue() (bool, error) {
 }
 
 // DecimalValue returns evaluated cell value as decimal.
-func (c *Cell) DecimalValue() (decimal.Decimal, error) {
+func (c *Cell) DecimalValue(dd value.LinkRegistryInterface) (decimal.Decimal, error) {
 	if c.valueType == CellValueUntyped {
-		c.evaluateType()
+		c.evaluateType(dd)
 	}
 	switch c.valueType {
 	case CellValueTypeEmpty:
@@ -136,9 +131,9 @@ func (c *Cell) DecimalValue() (decimal.Decimal, error) {
 }
 
 // StringValue returns evaluated cell rawValue as string.
-func (c *Cell) StringValue() (string, error) {
+func (c *Cell) StringValue(dd value.LinkRegistryInterface) (string, error) {
 	if c.valueType == CellValueUntyped {
-		c.evaluateType()
+		c.evaluateType(dd)
 	}
 	if c.valueType == CellValueTypeFormula {
 		val, _ := c.formulaValue(c.args)
@@ -148,9 +143,9 @@ func (c *Cell) StringValue() (string, error) {
 	return c.rawValue, nil
 }
 
-func (c *Cell) Value() (value.Value, error) {
+func (c *Cell) Value(dd value.LinkRegistryInterface) (value.Value, error) {
 	if c.valueType == CellValueUntyped {
-		c.evaluateType()
+		c.evaluateType(dd)
 	}
 	switch c.valueType {
 	case CellValueTypeEmpty:
@@ -177,7 +172,7 @@ func (c *Cell) SetValueUntyped(v string) {
 	c.rawValue = v
 }
 
-func (c *Cell) evaluateType() {
+func (c *Cell) evaluateType(dd value.LinkRegistryInterface) {
 	t, castedV := guessCellType(c.rawValue)
 	c.valueType = t
 	switch t {
@@ -197,7 +192,7 @@ func (c *Cell) evaluateType() {
 			return
 		}
 		c.formulaValue = formulaValue
-		c.args, err = makeLinks(vars, c.dataDelegate)
+		c.args, err = makeLinks(vars, dd)
 		if err != nil {
 			c.errorType = CellErrorTypeRefError
 			return
