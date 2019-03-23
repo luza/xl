@@ -1,7 +1,6 @@
 package document
 
 import (
-	"errors"
 	"fmt"
 	"regexp"
 	"strconv"
@@ -72,7 +71,7 @@ func (d *Document) sheetByIdx(idx int) *sheet.Sheet {
 func cellNameToXY(name string) (int, int, error) {
 	res := cellNamePattern.FindStringSubmatch(name)
 	if len(res) < 3 {
-		return 0, 0, errors.New("malformed cell name")
+		return 0, 0, value.NewError(value.ErrorKindName, "malformed cell name")
 	}
 	col, row := res[1], res[2]
 	x, p := 0, 1
@@ -82,7 +81,7 @@ func cellNameToXY(name string) (int, int, error) {
 	}
 	y, _ := strconv.Atoi(row)
 	if x < 1 || y < 1 {
-		return 0, 0, errors.New("malformed cell name")
+		return 0, 0, value.NewError(value.ErrorKindName, "malformed cell name")
 	}
 	return x - 1, y - 1, nil
 }

@@ -1,6 +1,7 @@
 package app
 
 import (
+	"xl/document/value"
 	"xl/ui"
 
 	"bytes"
@@ -16,7 +17,14 @@ func (a *App) CellView(x, y int) *ui.CellView {
 			Name: cellName(x, y),
 		}
 	}
-	v, _ := c.StringValue(a.doc)
+	v, err := c.StringValue(value.NewEvalContext(a.doc))
+	if err != nil {
+		t := err.Error()
+		return &ui.CellView{
+			Name:  cellName(x, y),
+			Error: &t,
+		}
+	}
 	return &ui.CellView{
 		Name:        cellName(x, y),
 		DisplayText: v,

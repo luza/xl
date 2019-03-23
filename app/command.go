@@ -1,11 +1,13 @@
 package app
 
 import (
+	"fmt"
+	"os"
+	"runtime/pprof"
+	"strings"
+
 	"xl/document/sheet"
 	"xl/ui"
-
-	"fmt"
-	"strings"
 )
 
 const colSizeIncrementStep = 6
@@ -47,6 +49,8 @@ func (a *App) processCommand(c string) bool {
 		a.cmdDeleteRow()
 	case "deleteCol":
 		a.cmdDeleteCol()
+	case "mprof":
+		a.cmdMemProf()
 	default:
 		a.output.SetStatus(fmt.Sprintf("unknown command %s", c), ui.StatusFlagError)
 	}
@@ -180,4 +184,13 @@ func (a *App) cmdDeleteRow() {
 func (a *App) cmdDeleteCol() {
 	a.doc.CurrentSheet.DeleteCol(a.doc.CurrentSheet.Cursor.X)
 	a.output.SetDirty(ui.DirtyGrid | ui.DirtyFormulaLine)
+}
+
+func (a *App) cmdMemProf() {
+	f, err := os.Create("xl.mprof")
+	if err != nil {
+		return
+	}
+	_ = pprof.WriteHeapProfile(f)
+	_ = f.Close()
 }

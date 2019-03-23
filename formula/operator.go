@@ -1,8 +1,6 @@
 package formula
 
 import (
-	"errors"
-	"fmt"
 	"strings"
 
 	"xl/document/value"
@@ -10,7 +8,7 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-func evalOperator(op string, args ...value.Value) (value.Value, error) {
+func evalOperator(ec *value.EvalContext, op string, args ...value.Value) (value.Value, error) {
 	var err error
 	v := value.Value{}
 	// all operands is being casted to first operand type
@@ -18,7 +16,7 @@ func evalOperator(op string, args ...value.Value) (value.Value, error) {
 	case value.TypeBool:
 		argsBool := make([]bool, len(args))
 		for i := range args {
-			if argsBool[i], err = args[i].BoolValue(); err != nil {
+			if argsBool[i], err = args[i].BoolValue(ec); err != nil {
 				return v, err
 			}
 		}
@@ -28,7 +26,7 @@ func evalOperator(op string, args ...value.Value) (value.Value, error) {
 	case value.TypeDecimal:
 		argsDecimal := make([]decimal.Decimal, len(args))
 		for i := range args {
-			if argsDecimal[i], err = args[i].DecimalValue(); err != nil {
+			if argsDecimal[i], err = args[i].DecimalValue(ec); err != nil {
 				return v, err
 			}
 		}
@@ -38,7 +36,7 @@ func evalOperator(op string, args ...value.Value) (value.Value, error) {
 	case value.TypeString:
 		argsString := make([]string, len(args))
 		for i := range args {
-			if argsString[i], err = args[i].StringValue(); err != nil {
+			if argsString[i], err = args[i].StringValue(ec); err != nil {
 				return v, err
 			}
 		}
@@ -50,11 +48,11 @@ func evalOperator(op string, args ...value.Value) (value.Value, error) {
 		if err != nil {
 			return v, err
 		}
-		args[0], err = l.Value()
+		args[0], err = l.Value(ec)
 		if err != nil {
 			return v, err
 		}
-		return evalOperator(op, args...)
+		return evalOperator(ec, op, args...)
 	default:
 		panic("unsupported type")
 	}
@@ -178,7 +176,7 @@ func evalDecimalOperator(op string, args []decimal.Decimal) (value.Value, error)
 		return value.NewDecimalValue(args[0].Mul(args[1])), nil
 	case "/":
 		if args[1].Equal(decimal.Zero) {
-			return value.Value{}, errors.New("division by zero")
+			return value.Value{}, value.NewError(value.ErrorKindDiv0, "division by zero")
 		}
 		return value.NewDecimalValue(args[0].Div(args[1])), nil
 	default:
@@ -189,7 +187,7 @@ func evalDecimalOperator(op string, args []decimal.Decimal) (value.Value, error)
 func evalStringOperator(op string, args []string) (value.Value, error) {
 	if len(args) == 1 {
 		// unary neg
-		return value.Value{}, fmt.Errorf("arithmetic (%s) on string operand", op)
+		return value.Value{}, value.NewError(value.ErrorKindFormula, "arithmetic (%s) on string operand", op)
 	}
 	res := strings.Compare(args[0], args[1])
 	switch op {
@@ -206,20 +204,20 @@ func evalStringOperator(op string, args []string) (value.Value, error) {
 	case ">=":
 		return value.NewBoolValue(res >= 0), nil
 	case "+", "-", "*", "/":
-		return value.Value{}, fmt.Errorf("arithmetic (%s) on string operand", op)
+		return value.Value{}, value.NewError(value.ErrorKindFormula, "arithmetic (%s) on string operand", op)
 	default:
 		panic("unsupported operator")
 	}
 }
 
-func evalFunc(name string, args []value.Value) (value.Value, error) {
+func evalFunc(ec *value.EvalContext, name string, args []value.Value) (value.Value, error) {
 	if f, ok := functions[name]; ok {
 		if len(args) < f.MinArgs || len(args) > f.MaxArgs {
-			return value.Value{}, fmt.Errorf("function %s accepts from %d to %d arguments, %d provided",
+			return value.Value{}, value.NewError(value.ErrorKindFormula, "function %s accepts from %d to %d arguments, %d provided",
 				name, f.MinArgs, f.MaxArgs, len(args))
 		}
-		return f.F(args)
+		return f.F(ec, args)
 	} else {
-		return value.Value{}, fmt.Errorf("function %s does not exist", name)
+		return value.Value{}, value.NewError(value.ErrorKindFormula, "function %s does not exist", name)
 	}
 }

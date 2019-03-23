@@ -120,17 +120,18 @@ var lex = lexer.Must(lexer.Regexp(
 // Parse parses the formula, extracts variables from it and builds
 // functions chain that perform the expression representing by the formula..
 func Parse(source string) (Function, *VarBin, error) {
+	// TODO: do that once
 	p, err := participle.Build(
 		&Expression{},
 		participle.Lexer(lex),
 		participle.CaseInsensitive("Boolean"),
 	)
 	if err != nil {
-		return nil, nil, err
+		panic(err)
 	}
 	expression := &Expression{}
 	if err = p.ParseString(source, expression); err != nil {
-		return nil, nil, err
+		return nil, nil, value.NewError(value.ErrorKindFormula, err.Error())
 	}
 	vb := &VarBin{}
 	f, _ := buildFuncFromEquality(expression.Equality, vb)
@@ -143,16 +144,16 @@ func buildFuncFromEquality(eq *Equality, vars *VarBin) (Function, int) {
 	}
 	subFunc1, consumedArgs1 := buildFuncFromComparison(eq.Comparison, vars)
 	subFunc2, consumedArgs2 := buildFuncFromEquality(eq.Next, vars)
-	f := func(args []value.Value) (value.Value, error) {
+	f := func(ec *value.EvalContext, args []value.Value) (value.Value, error) {
 		var v1, v2 value.Value
 		var err error
-		if v1, err = subFunc1(args); err != nil {
+		if v1, err = subFunc1(ec, args); err != nil {
 			return value.Value{}, err
 		}
-		if v2, err = subFunc2(args[consumedArgs1:]); err != nil {
+		if v2, err = subFunc2(ec, args[consumedArgs1:]); err != nil {
 			return value.Value{}, err
 		}
-		return evalOperator(eq.Op, v1, v2)
+		return evalOperator(ec, eq.Op, v1, v2)
 	}
 	return f, consumedArgs1 + consumedArgs2
 }
@@ -163,16 +164,16 @@ func buildFuncFromComparison(cmp *Comparison, vars *VarBin) (Function, int) {
 	}
 	subFunc1, consumedArgs1 := buildFuncFromAddition(cmp.Addition, vars)
 	subFunc2, consumedArgs2 := buildFuncFromComparison(cmp.Next, vars)
-	f := func(args []value.Value) (value.Value, error) {
+	f := func(ec *value.EvalContext, args []value.Value) (value.Value, error) {
 		var v1, v2 value.Value
 		var err error
-		if v1, err = subFunc1(args); err != nil {
+		if v1, err = subFunc1(ec, args); err != nil {
 			return value.Value{}, err
 		}
-		if v2, err = subFunc2(args[consumedArgs1:]); err != nil {
+		if v2, err = subFunc2(ec, args[consumedArgs1:]); err != nil {
 			return value.Value{}, err
 		}
-		return evalOperator(cmp.Op, v1, v2)
+		return evalOperator(ec, cmp.Op, v1, v2)
 	}
 	return f, consumedArgs1 + consumedArgs2
 }
@@ -183,16 +184,16 @@ func buildFuncFromAddition(a *Addition, vars *VarBin) (Function, int) {
 	}
 	subFunc1, consumedArgs1 := buildFuncFromMultiplication(a.Multiplication, vars)
 	subFunc2, consumedArgs2 := buildFuncFromAddition(a.Next, vars)
-	f := func(args []value.Value) (value.Value, error) {
+	f := func(ec *value.EvalContext, args []value.Value) (value.Value, error) {
 		var v1, v2 value.Value
 		var err error
-		if v1, err = subFunc1(args); err != nil {
+		if v1, err = subFunc1(ec, args); err != nil {
 			return value.Value{}, err
 		}
-		if v2, err = subFunc2(args[consumedArgs1:]); err != nil {
+		if v2, err = subFunc2(ec, args[consumedArgs1:]); err != nil {
 			return value.Value{}, err
 		}
-		return evalOperator(a.Op, v1, v2)
+		return evalOperator(ec, a.Op, v1, v2)
 	}
 	return f, consumedArgs1 + consumedArgs2
 }
@@ -203,16 +204,16 @@ func buildFuncFromMultiplication(m *Multiplication, vars *VarBin) (Function, int
 	}
 	subFunc1, consumedArgs1 := buildFuncFromUnary(m.Unary, vars)
 	subFunc2, consumedArgs2 := buildFuncFromMultiplication(m.Next, vars)
-	f := func(args []value.Value) (value.Value, error) {
+	f := func(ec *value.EvalContext, args []value.Value) (value.Value, error) {
 		var v1, v2 value.Value
 		var err error
-		if v1, err = subFunc1(args); err != nil {
+		if v1, err = subFunc1(ec, args); err != nil {
 			return value.Value{}, err
 		}
-		if v2, err = subFunc2(args[consumedArgs1:]); err != nil {
+		if v2, err = subFunc2(ec, args[consumedArgs1:]); err != nil {
 			return value.Value{}, err
 		}
-		return evalOperator(m.Op, v1, v2)
+		return evalOperator(ec, m.Op, v1, v2)
 	}
 	return f, consumedArgs1 + consumedArgs2
 }
@@ -220,12 +221,12 @@ func buildFuncFromMultiplication(m *Multiplication, vars *VarBin) (Function, int
 func buildFuncFromUnary(u *Unary, vars *VarBin) (Function, int) {
 	if u.Unary != nil {
 		subFunc, consumedArgs := buildFuncFromUnary(u.Unary, vars)
-		f := func(args []value.Value) (value.Value, error) {
-			v, err := subFunc(args)
+		f := func(ec *value.EvalContext, args []value.Value) (value.Value, error) {
+			v, err := subFunc(ec, args)
 			if err != nil {
 				return value.Value{}, err
 			}
-			return evalOperator(u.Op, v)
+			return evalOperator(ec, u.Op, v)
 		}
 		return f, consumedArgs
 	} else if u.Primary.SubExpression != nil {
@@ -238,38 +239,38 @@ func buildFuncFromUnary(u *Unary, vars *VarBin) (Function, int) {
 			subFunc[i], consumedArgs[i] = buildFuncFromEquality(u.Primary.Func.Arguments[i], vars)
 			totalConsumedArgs += consumedArgs[i]
 		}
-		f := func(args []value.Value) (value.Value, error) {
+		f := func(ec *value.EvalContext, args []value.Value) (value.Value, error) {
 			var err error
 			values := make([]value.Value, len(u.Primary.Func.Arguments))
 			ca := 0
 			for i := range u.Primary.Func.Arguments {
-				values[i], err = subFunc[i](args[ca:])
+				values[i], err = subFunc[i](ec, args[ca:])
 				if err != nil {
 					return value.Value{}, err
 				}
 				ca += consumedArgs[i]
 			}
-			return evalFunc(string(u.Primary.Func.Name), values)
+			return evalFunc(ec, string(u.Primary.Func.Name), values)
 		}
 		return f, totalConsumedArgs
 	} else if u.Primary.Boolean != nil {
-		f := func([]value.Value) (value.Value, error) {
+		f := func(*value.EvalContext, []value.Value) (value.Value, error) {
 			return value.NewBoolValue(bool(*u.Primary.Boolean)), nil
 		}
 		return f, 0
 	} else if u.Primary.Number != nil {
-		f := func([]value.Value) (value.Value, error) {
+		f := func(*value.EvalContext, []value.Value) (value.Value, error) {
 			return value.NewDecimalValue(decimal.NewFromFloat(*u.Primary.Number)), nil
 		}
 		return f, 0
 	} else if u.Primary.String != nil {
-		f := func([]value.Value) (value.Value, error) {
+		f := func(*value.EvalContext, []value.Value) (value.Value, error) {
 			return value.NewStringValue(string(*u.Primary.String)), nil
 		}
 		return f, 0
 	} else {
 		vars.Vars = append(vars.Vars, newVar(u.Primary.CellRange))
-		f := func(args []value.Value) (value.Value, error) {
+		f := func(ec *value.EvalContext, args []value.Value) (value.Value, error) {
 			if len(args) == 0 {
 				panic("too few arguments")
 			}

@@ -9,6 +9,7 @@ type VarCell struct {
 	Cell  string
 }
 
+// FIXME: is this possible to get rid of this struct
 type Var struct {
 	Cell   VarCell
 	CellTo *VarCell

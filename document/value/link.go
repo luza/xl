@@ -1,18 +1,16 @@
 package value
 
 import (
-	"errors"
-
 	"github.com/shopspring/decimal"
 )
 
 type LinkRegistryInterface interface {
 	MakeLink(cellName string, sheetTitle string) (*Link, error)
 
-	Value(sheetIdx, x, y int) (Value, error)
-	BoolValue(sheetIdx, x, y int) (bool, error)
-	DecimalValue(sheetIdx, x, y int) (decimal.Decimal, error)
-	StringValue(sheetIdx, x, y int) (string, error)
+	Value(ec *EvalContext, sheetIdx, x, y int) (Value, error)
+	BoolValue(ec *EvalContext, sheetIdx, x, y int) (bool, error)
+	DecimalValue(ec *EvalContext, sheetIdx, x, y int) (decimal.Decimal, error)
+	StringValue(ec *EvalContext, sheetIdx, x, y int) (string, error)
 }
 
 type LinkCell struct {
@@ -25,51 +23,64 @@ type Link struct {
 	cell     LinkCell
 	cellTo   *LinkCell
 	//broken   bool
-	dd LinkRegistryInterface
 	// TODO: linking context
 }
 
-func NewLink(sheetIdx int, cell LinkCell, dd LinkRegistryInterface) *Link {
+func NewLink(sheetIdx int, cell LinkCell) *Link {
 	return &Link{
 		sheetIdx: sheetIdx,
 		cell:     cell,
-		dd:       dd,
 	}
 }
 
-func NewRangeLink(sheetIdx int, cell LinkCell, cellTo LinkCell, dd LinkRegistryInterface) *Link {
+func NewRangeLink(sheetIdx int, cell LinkCell, cellTo LinkCell) *Link {
 	return &Link{
 		sheetIdx: sheetIdx,
 		cell:     cell,
 		cellTo:   &cellTo,
-		dd:       dd,
 	}
 }
 
-func (l *Link) Value() (Value, error) {
+func (l *Link) Value(ec *EvalContext) (Value, error) {
 	if l.cellTo != nil {
-		return Value{}, errors.New("unable to use range as a single value")
+		return Value{}, NewError(ErrorKindCasting, "unable to use range as a single value")
 	}
-	return l.dd.Value(l.sheetIdx, l.cell.X, l.cell.Y)
+	if ec.Visited(l) {
+		return Value{}, NewError(ErrorKindRef, "circular reference")
+	}
+	ec.AddVisited(l)
+	return ec.LinkRegistry.Value(ec, l.sheetIdx, l.cell.X, l.cell.Y)
 }
 
-func (l *Link) BoolValue() (bool, error) {
+func (l *Link) BoolValue(ec *EvalContext) (bool, error) {
 	if l.cellTo != nil {
-		return false, errors.New("unable to cast range to bool")
+		return false, NewError(ErrorKindCasting, "unable to cast range to bool")
 	}
-	return l.dd.BoolValue(l.sheetIdx, l.cell.X, l.cell.Y)
+	if ec.Visited(l) {
+		return false, NewError(ErrorKindRef, "circular reference")
+	}
+	ec.AddVisited(l)
+	return ec.LinkRegistry.BoolValue(ec, l.sheetIdx, l.cell.X, l.cell.Y)
 }
 
-func (l *Link) DecimalValue() (decimal.Decimal, error) {
+func (l *Link) DecimalValue(ec *EvalContext) (decimal.Decimal, error) {
 	if l.cellTo != nil {
-		return decimal.Zero, errors.New("unable to cast range to decimal")
+		return decimal.Zero, NewError(ErrorKindCasting, "unable to cast range to decimal")
 	}
-	return l.dd.DecimalValue(l.sheetIdx, l.cell.X, l.cell.Y)
+	if ec.Visited(l) {
+		return decimal.Zero, NewError(ErrorKindRef, "circular reference")
+	}
+	ec.AddVisited(l)
+	return ec.LinkRegistry.DecimalValue(ec, l.sheetIdx, l.cell.X, l.cell.Y)
 }
 
-func (l *Link) StringValue() (string, error) {
+func (l *Link) StringValue(ec *EvalContext) (string, error) {
 	if l.cellTo != nil {
-		return "", errors.New("unable to cast range to string")
+		return "", NewError(ErrorKindCasting, "unable to cast range to string")
 	}
-	return l.dd.StringValue(l.sheetIdx, l.cell.X, l.cell.Y)
+	if ec.Visited(l) {
+		return "", NewError(ErrorKindRef, "circular reference")
+	}
+	ec.AddVisited(l)
+	return ec.LinkRegistry.StringValue(ec, l.sheetIdx, l.cell.X, l.cell.Y)
 }

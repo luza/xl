@@ -1,7 +1,6 @@
 package document
 
 import (
-	"errors"
 	"fmt"
 
 	"xl/document/sheet"
@@ -23,14 +22,14 @@ func (d *Document) MakeLink(cellName string, sheetTitle string) (*value.Link, er
 		}
 		// sheet not found
 		if s == nil {
-			return nil, errors.New("sheet not found")
+			return nil, value.NewError(value.ErrorKindName, "sheet does not exist")
 		}
 	} else {
 		s = d.CurrentSheet
 	}
 	x, y, err := cellNameToXY(cellName)
 	if err != nil {
-		return nil, errors.New("incorrect cell name")
+		return nil, err
 	}
 	// existing link?
 	if l, ok := d.linksRegistry[s.Idx][x][y]; ok {
@@ -38,7 +37,7 @@ func (d *Document) MakeLink(cellName string, sheetTitle string) (*value.Link, er
 		return l, nil
 	}
 	// not found? create new one
-	l := value.NewLink(s.Idx, value.LinkCell{X: x, Y: y}, d)
+	l := value.NewLink(s.Idx, value.LinkCell{X: x, Y: y})
 	log.L.Error(fmt.Sprintf("created link sheet %d x %d y %d\n", s.Idx, x, y))
 	if _, ok := d.linksRegistry[s.Idx]; !ok {
 		d.linksRegistry[s.Idx] = make(map[int]map[int]*value.Link)
@@ -50,50 +49,50 @@ func (d *Document) MakeLink(cellName string, sheetTitle string) (*value.Link, er
 	return l, nil
 }
 
-func (d *Document) Value(sheetIdx, x, y int) (value.Value, error) {
+func (d *Document) Value(ec *value.EvalContext, sheetIdx, x, y int) (value.Value, error) {
 	s := d.sheetByIdx(sheetIdx)
 	if s == nil {
-		return value.Value{}, errors.New("sheet does not exist")
+		return value.Value{}, value.NewError(value.ErrorKindName, "sheet does not exist")
 	}
 	c := s.Cell(x, y)
 	if c == nil {
 		return value.Value{}, nil
 	}
-	return c.Value(d)
+	return c.Value(ec)
 }
 
-func (d *Document) BoolValue(sheetIdx, x, y int) (bool, error) {
+func (d *Document) BoolValue(ec *value.EvalContext, sheetIdx, x, y int) (bool, error) {
 	s := d.sheetByIdx(sheetIdx)
 	if s == nil {
-		return false, errors.New("sheet does not exist")
+		return false, value.NewError(value.ErrorKindName, "sheet does not exist")
 	}
 	c := s.Cell(x, y)
 	if c == nil {
 		return false, nil
 	}
-	return c.BoolValue(d)
+	return c.BoolValue(ec)
 }
 
-func (d *Document) DecimalValue(sheetIdx, x, y int) (decimal.Decimal, error) {
+func (d *Document) DecimalValue(ec *value.EvalContext, sheetIdx, x, y int) (decimal.Decimal, error) {
 	s := d.sheetByIdx(sheetIdx)
 	if s == nil {
-		return decimal.Zero, errors.New("sheet does not exist")
+		return decimal.Zero, value.NewError(value.ErrorKindName, "sheet does not exist")
 	}
 	c := s.Cell(x, y)
 	if c == nil {
 		return decimal.Zero, nil
 	}
-	return c.DecimalValue(d)
+	return c.DecimalValue(ec)
 }
 
-func (d *Document) StringValue(sheetIdx, x, y int) (string, error) {
+func (d *Document) StringValue(ec *value.EvalContext, sheetIdx, x, y int) (string, error) {
 	s := d.sheetByIdx(sheetIdx)
 	if s == nil {
-		return "", errors.New("sheet does not exist")
+		return "", value.NewError(value.ErrorKindName, "sheet does not exist")
 	}
 	c := s.Cell(x, y)
 	if c == nil {
 		return "", nil
 	}
-	return c.StringValue(d)
+	return c.StringValue(ec)
 }

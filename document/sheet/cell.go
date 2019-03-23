@@ -1,7 +1,6 @@
 package sheet
 
 import (
-	"errors"
 	"strconv"
 
 	"xl/document/value"
@@ -21,15 +20,8 @@ const (
 	CellValueTypeFormula
 )
 
-const (
-	CellErrorTypeNoError = iota
-	CellErrorTypeFormulaError
-	CellErrorTypeRefError
-)
-
 type Cell struct {
 	valueType int
-	errorType int
 
 	// values union
 	rawValue     string
@@ -45,7 +37,6 @@ type Cell struct {
 func NewCellEmpty() *Cell {
 	return &Cell{
 		valueType: CellValueTypeEmpty,
-		errorType: CellErrorTypeNoError,
 	}
 }
 
@@ -63,7 +54,6 @@ func (c *Cell) EraseValue() {
 	c.decimalValue = nil
 	c.formulaValue = nil
 	c.valueType = CellValueTypeEmpty
-	c.errorType = CellErrorTypeNoError
 }
 
 // RawValue returns raw cell value as string. No evaluation performed.
@@ -71,15 +61,17 @@ func (c *Cell) RawValue() string {
 	return c.rawValue
 }
 
-func (c *Cell) BoolValue(dd value.LinkRegistryInterface) (bool, error) {
+func (c *Cell) BoolValue(ec *value.EvalContext) (bool, error) {
 	if c.valueType == CellValueUntyped {
-		c.evaluateType(dd)
+		if err := c.evaluateType(ec); err != nil {
+			return false, err
+		}
 	}
 	switch c.valueType {
 	case CellValueTypeEmpty:
 		return false, nil
 	case CellValueTypeText:
-		return false, errors.New("unable to cast text to bool")
+		return false, value.NewError(value.ErrorKindCasting, "unable to cast text to bool")
 	case CellValueTypeInteger:
 		return c.intValue != 0, nil
 	case CellValueTypeDecimal:
@@ -87,65 +79,65 @@ func (c *Cell) BoolValue(dd value.LinkRegistryInterface) (bool, error) {
 	case CellValueTypeBool:
 		return c.boolValue, nil
 	case CellValueTypeFormula:
-		val, err := c.formulaValue(c.args)
+		val, err := c.formulaValue(ec, c.args)
 		if err != nil {
 			return false, err
 		}
-		bv, err := val.BoolValue()
-		if err != nil {
-			return false, err
-		}
-		return bv, nil
+		return val.BoolValue(ec)
 	}
 	return false, nil
 }
 
 // DecimalValue returns evaluated cell value as decimal.
-func (c *Cell) DecimalValue(dd value.LinkRegistryInterface) (decimal.Decimal, error) {
+func (c *Cell) DecimalValue(ec *value.EvalContext) (decimal.Decimal, error) {
 	if c.valueType == CellValueUntyped {
-		c.evaluateType(dd)
+		if err := c.evaluateType(ec); err != nil {
+			return decimal.Zero, err
+		}
 	}
 	switch c.valueType {
 	case CellValueTypeEmpty:
 		return decimal.Zero, nil
 	case CellValueTypeText:
-		return decimal.Zero, errors.New("unable to cast text to decimal")
+		return decimal.Zero, value.NewError(value.ErrorKindCasting, "unable to cast text to decimal")
 	case CellValueTypeInteger:
 		return decimal.New(int64(c.intValue), 0), nil
 	case CellValueTypeDecimal:
 		return *c.decimalValue, nil
 	case CellValueTypeBool:
-		return decimal.Zero, errors.New("unable to cast bool to decimal")
+		return decimal.Zero, value.NewError(value.ErrorKindCasting, "unable to cast bool to decimal")
 	case CellValueTypeFormula:
-		val, err := c.formulaValue(c.args)
+		val, err := c.formulaValue(ec, c.args)
 		if err != nil {
 			return decimal.Zero, err
 		}
-		dv, err := val.DecimalValue()
-		if err != nil {
-			return decimal.Zero, err
-		}
-		return dv, nil
+		return val.DecimalValue(ec)
 	}
 	return decimal.Zero, nil
 }
 
 // StringValue returns evaluated cell rawValue as string.
-func (c *Cell) StringValue(dd value.LinkRegistryInterface) (string, error) {
+func (c *Cell) StringValue(ec *value.EvalContext) (string, error) {
 	if c.valueType == CellValueUntyped {
-		c.evaluateType(dd)
+		if err := c.evaluateType(ec); err != nil {
+			return "", err
+		}
 	}
 	if c.valueType == CellValueTypeFormula {
-		val, _ := c.formulaValue(c.args)
-		sv, _ := val.StringValue()
-		return sv, nil
+		val, err := c.formulaValue(ec, c.args)
+		if err != nil {
+			return "", err
+		}
+		return val.StringValue(ec)
 	}
 	return c.rawValue, nil
 }
 
-func (c *Cell) Value(dd value.LinkRegistryInterface) (value.Value, error) {
+func (c *Cell) Value(ec *value.EvalContext) (value.Value, error) {
 	if c.valueType == CellValueUntyped {
-		c.evaluateType(dd)
+		if err := c.evaluateType(ec); err != nil {
+			return value.Value{}, err
+		}
 	}
 	switch c.valueType {
 	case CellValueTypeEmpty:
@@ -159,7 +151,7 @@ func (c *Cell) Value(dd value.LinkRegistryInterface) (value.Value, error) {
 	case CellValueTypeBool:
 		return value.NewBoolValue(c.boolValue), nil
 	case CellValueTypeFormula:
-		return c.formulaValue(c.args)
+		return c.formulaValue(ec, c.args)
 	}
 	panic("unsupported type")
 }
@@ -172,9 +164,8 @@ func (c *Cell) SetValueUntyped(v string) {
 	c.rawValue = v
 }
 
-func (c *Cell) evaluateType(dd value.LinkRegistryInterface) {
+func (c *Cell) evaluateType(ec *value.EvalContext) error {
 	t, castedV := guessCellType(c.rawValue)
-	c.valueType = t
 	switch t {
 	case CellValueTypeInteger:
 		c.intValue = castedV.(int)
@@ -188,16 +179,16 @@ func (c *Cell) evaluateType(dd value.LinkRegistryInterface) {
 		c.args = nil
 		formulaValue, vars, err := formula.Parse(c.rawValue)
 		if err != nil {
-			c.errorType = CellErrorTypeFormulaError
-			return
+			return err
 		}
 		c.formulaValue = formulaValue
-		c.args, err = makeLinks(vars, dd)
+		c.args, err = makeLinks(vars, ec)
 		if err != nil {
-			c.errorType = CellErrorTypeRefError
-			return
+			return err
 		}
 	}
+	c.valueType = t
+	return nil
 }
 
 // guessCellType detects cell type based on its rawValue.
@@ -221,7 +212,7 @@ func guessCellType(v string) (int, interface{}) {
 	return CellValueTypeText, v
 }
 
-func makeLinks(vb *formula.VarBin, dd value.LinkRegistryInterface) ([]value.Value, error) {
+func makeLinks(vb *formula.VarBin, ec *value.EvalContext) ([]value.Value, error) {
 	values := make([]value.Value, len(vb.Vars))
 	for i := range vb.Vars {
 		log.L.Error("converting var to link")
@@ -231,7 +222,7 @@ func makeLinks(vb *formula.VarBin, dd value.LinkRegistryInterface) ([]value.Valu
 			//values[i] = value.NewLinkValue(l)
 		} else {
 			c := vb.Vars[i].Cell
-			l, err := dd.MakeLink(c.Cell, c.Sheet)
+			l, err := ec.LinkRegistry.MakeLink(c.Cell, c.Sheet)
 			if err != nil {
 				return nil, err
 			}

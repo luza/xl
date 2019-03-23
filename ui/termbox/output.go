@@ -93,7 +93,8 @@ func (t *Termbox) RefreshView() {
 			heightChars := pixelsToCharsY(t.dataDelegate.RowView(cellY).Height)
 			for screenX < t.screenWidth {
 				widthChars := pixelsToCharsX(t.dataDelegate.ColView(cellX).Width)
-				text := t.dataDelegate.CellView(cellX, cellY).DisplayText
+				c := t.dataDelegate.CellView(cellX, cellY)
+				text := c.DisplayText
 
 				bgColor := colorBlack
 				if cellX%2 != 0 || cellY%2 == 0 {
@@ -107,6 +108,11 @@ func (t *Termbox) RefreshView() {
 					t.lastCursorX = screenX
 					t.lastCursorY = screenY
 					termbox.SetCursor(screenX, screenY)
+				}
+
+				if c.Error != nil {
+					text = *c.Error
+					bgColor = colorRed
 				}
 
 				drawCell(screenX, screenY, widthChars, heightChars, text, colorGrey, bgColor)

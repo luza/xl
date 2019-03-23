@@ -40,6 +40,7 @@ type DataDelegateInterface interface {
 type CellView struct {
 	Name        string
 	DisplayText string
+	Error       *string
 }
 
 type RowView struct {

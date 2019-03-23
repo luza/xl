@@ -10,7 +10,7 @@ import (
 
 const maxArguments = 1000
 
-type Function func([]value.Value) (value.Value, error)
+type Function func(*value.EvalContext, []value.Value) (value.Value, error)
 
 type functionDef struct {
 	F       Function
@@ -500,18 +500,18 @@ var functions = map[string]functionDef{
 	// ZTEST [Compatibility] Returns the one-tailed probability-value of a z-test
 }
 
-func trim(args []value.Value) (value.Value, error) {
-	s, err := args[0].StringValue()
+func trim(ec *value.EvalContext, args []value.Value) (value.Value, error) {
+	s, err := args[0].StringValue(ec)
 	if err != nil {
 		return value.Value{}, err
 	}
 	return value.NewStringValue(strings.Trim(s, "\n\r\t ")), nil
 }
 
-func sum(args []value.Value) (value.Value, error) {
+func sum(ec *value.EvalContext, args []value.Value) (value.Value, error) {
 	s := decimal.Zero
 	for i := range args {
-		d, err := args[i].DecimalValue()
+		d, err := args[i].DecimalValue(ec)
 		if err != nil {
 			return value.Value{}, err
 		}

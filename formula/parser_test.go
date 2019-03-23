@@ -56,14 +56,16 @@ func TestParse(t *testing.T) {
 		if len(vb.Vars) != c.varsNum {
 			t.Errorf("case %s: must return %d variables (returned %d)", c.f, c.varsNum, len(vb.Vars))
 		}
-		v, err := f([]value.Value{
+		var lr value.LinkRegistryInterface
+		ec := value.NewEvalContext(lr)
+		v, err := f(ec, []value.Value{
 			value.NewDecimalValue(decimal.NewFromFloat(4)),
 			value.NewDecimalValue(decimal.NewFromFloat(6)),
 		})
 		if err != nil {
 			t.Errorf("case %s: function must not fail, got %s", c.f, err)
 		}
-		s, _ := v.StringValue()
+		s, _ := v.StringValue(ec)
 		if s != c.res {
 			t.Errorf("case %s: must be equal to %s, got %s", c.f, c.res, s)
 		}
@@ -105,7 +107,9 @@ func TestExecuteErrors(t *testing.T) {
 			t.Errorf("case %s: must not fail on parse %s", c.f, err)
 			continue
 		}
-		_, err = f([]value.Value{
+		var lr value.LinkRegistryInterface
+		ec := value.NewEvalContext(lr)
+		_, err = f(ec, []value.Value{
 			value.NewDecimalValue(decimal.NewFromFloat(4)),
 			value.NewDecimalValue(decimal.NewFromFloat(6)),
 		})
