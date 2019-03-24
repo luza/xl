@@ -20,7 +20,7 @@ type Error struct {
 
 func NewError(kind int, msg string, a ...interface{}) *Error {
 	if len(a) > 0 {
-		msg = fmt.Sprintf(msg, a)
+		msg = fmt.Sprintf(msg, a...)
 	}
 	return &Error{
 		error: errors.New(msg),

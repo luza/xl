@@ -29,7 +29,7 @@ func New() *Document {
 }
 
 func NewWithEmptySheet() *Document {
-	s := sheet.New(1, "New Sheet")
+	s := sheet.New(1, "Sheet 1")
 	return &Document{
 		Sheets:        []*sheet.Sheet{s},
 		CurrentSheet:  s,
@@ -40,9 +40,15 @@ func NewWithEmptySheet() *Document {
 }
 
 func (d *Document) NewSheet(title string) (*sheet.Sheet, error) {
-	// FIXME: title must be unique
 	if title == "" {
 		title = fmt.Sprintf("Sheet %d", d.maxSheetIdx+1)
+	} else {
+		// ensure title is unique
+		for _, s := range d.Sheets {
+			if s.Title == title {
+				return nil, value.NewError(value.ErrorKindName, "duplicating sheet name")
+			}
+		}
 	}
 	s := sheet.New(d.maxSheetIdx+1, title)
 	d.Sheets = append(d.Sheets, s)
@@ -58,15 +64,6 @@ func (d *Document) sheetByIdx(idx int) *sheet.Sheet {
 	}
 	return nil
 }
-
-//func (d *Document) FindCell(sheetTitle string, x, y int) *sheet.Cell {
-//	for _, s := range d.Sheets {
-//		if s.Title == sheetTitle {
-//			return s.Cell(x, y)
-//		}
-//	}
-//	return nil
-//}
 
 func cellNameToXY(name string) (int, int, error) {
 	res := cellNamePattern.FindStringSubmatch(name)

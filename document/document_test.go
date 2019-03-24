@@ -1,6 +1,10 @@
 package document
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
 
 func TestCellNameToXY(t *testing.T) {
 	testCases := []struct {
@@ -18,12 +22,8 @@ func TestCellNameToXY(t *testing.T) {
 	}
 	for _, c := range testCases {
 		x, y, err := cellNameToXY(c.name)
-		if err != nil {
-			t.Errorf("case %s: must not fail on parse %s", c.name, err)
-			continue
-		}
-		if x != c.x || y != c.y {
-			t.Errorf("case %s: must be true X: %d==%d, Y: %d==%d", c.name, c.x, x, c.y, y)
-		}
+		assert.NoErrorf(t, err, "case %s: must not fail on parse %s", c.name, err)
+		assert.Equalf(t, c.x, x, "case %s: must be true X: %d==%d", c.name, c.x, x)
+		assert.Equalf(t, c.y, y, "case %s: must be true Y: %d==%d", c.name, c.y, y)
 	}
 }
