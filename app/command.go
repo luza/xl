@@ -51,6 +51,8 @@ func (a *App) processCommand(c string) bool {
 		a.cmdDeleteCol()
 	case "mprof":
 		a.cmdMemProf()
+	case "go":
+		a.cmdGo(arg1(args))
 	default:
 		a.output.SetStatus(fmt.Sprintf("unknown command %s", c), ui.StatusFlagError)
 	}
@@ -165,24 +167,22 @@ func (a *App) cmdPasteCell() {
 }
 
 func (a *App) cmdInsertRow(n int) {
-	a.doc.CurrentSheet.Cursor.Y += n
-	a.doc.CurrentSheet.InsertRow(a.doc.CurrentSheet.Cursor.Y)
+	a.doc.InsertRow(n)
 	a.output.SetDirty(ui.DirtyGrid | ui.DirtyFormulaLine)
 }
 
 func (a *App) cmdInsertCol(n int) {
-	a.doc.CurrentSheet.Cursor.X += n
-	a.doc.CurrentSheet.InsertCol(a.doc.CurrentSheet.Cursor.X)
+	a.doc.InsertCol(n)
 	a.output.SetDirty(ui.DirtyGrid | ui.DirtyFormulaLine)
 }
 
 func (a *App) cmdDeleteRow() {
-	a.doc.CurrentSheet.DeleteRow(a.doc.CurrentSheet.Cursor.Y)
+	a.doc.DeleteRow()
 	a.output.SetDirty(ui.DirtyGrid | ui.DirtyFormulaLine)
 }
 
 func (a *App) cmdDeleteCol() {
-	a.doc.CurrentSheet.DeleteCol(a.doc.CurrentSheet.Cursor.X)
+	a.doc.DeleteCol()
 	a.output.SetDirty(ui.DirtyGrid | ui.DirtyFormulaLine)
 }
 
@@ -193,4 +193,13 @@ func (a *App) cmdMemProf() {
 	}
 	_ = pprof.WriteHeapProfile(f)
 	_ = f.Close()
+}
+
+func (a *App) cmdGo(cellName string) {
+	x, y, err := a.doc.FindCell(cellName)
+	if err != nil {
+		a.output.SetStatus("incorrect destination", ui.StatusFlagError)
+		return
+	}
+	a.moveCursorTo(x, y)
 }

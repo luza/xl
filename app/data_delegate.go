@@ -85,16 +85,18 @@ func rowName(n int) string {
 func colName(n int) string {
 	alphabet := "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 	var result bytes.Buffer
-	for {
-		buf := result.String()
-		result.Reset()
-		result.WriteByte(alphabet[n%26])
-		result.WriteString(buf)
-		if n /= 26; n == 0 {
-			break
-		}
+	result.WriteByte(alphabet[n%26])
+	n /= 26
+	for n > 0 {
+		result.WriteByte(alphabet[(n-1)%26])
+		n = (n - 1) / 26
 	}
-	return result.String()
+	// reverse bytes
+	b := result.Bytes()
+	for i, j := 0, len(b)-1; i < j; i, j = i+1, j-1 {
+		b[i], b[j] = b[j], b[i]
+	}
+	return string(b)
 }
 
 // cellName returns name for cell under given X and Y.

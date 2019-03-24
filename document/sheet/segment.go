@@ -83,7 +83,6 @@ func (s *staticSegment) InsertRow(y int) {
 		s.Cells[x][y] = *NewCellEmpty()
 	}
 	s.size.Height++
-	// TODO: relinking
 }
 
 func (s *staticSegment) InsertCol(x int) {
@@ -95,7 +94,6 @@ func (s *staticSegment) InsertCol(x int) {
 	}
 	s.Cells[x] = col
 	s.size.Width++
-	// TODO: relinking
 }
 
 func (s *staticSegment) DeleteRow(y int) {
@@ -105,7 +103,6 @@ func (s *staticSegment) DeleteRow(y int) {
 		s.Cells[x] = s.Cells[x][:len(s.Cells[x])-1]
 	}
 	s.size.Height--
-	// TODO: relinking
 }
 
 func (s *staticSegment) DeleteCol(x int) {
@@ -113,7 +110,6 @@ func (s *staticSegment) DeleteCol(x int) {
 	s.Cells[len(s.Cells)-1] = nil
 	s.Cells = s.Cells[:len(s.Cells)-1]
 	s.size.Width--
-	// TODO: relinking
 }
 
 // Extrapolation segment.

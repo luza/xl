@@ -56,6 +56,33 @@ func (d *Document) NewSheet(title string) (*sheet.Sheet, error) {
 	return s, nil
 }
 
+func (d *Document) InsertRow(n int) {
+	d.CurrentSheet.Cursor.Y += n
+	d.CurrentSheet.InsertRow(d.CurrentSheet.Cursor.Y)
+	// TODO: relinking
+}
+
+func (d *Document) InsertCol(n int) {
+	d.CurrentSheet.Cursor.X += n
+	d.CurrentSheet.InsertCol(d.CurrentSheet.Cursor.X)
+	// TODO: relinking
+}
+
+func (d *Document) DeleteRow() {
+	d.CurrentSheet.DeleteRow(d.CurrentSheet.Cursor.Y)
+	// TODO: relinking
+}
+
+func (d *Document) DeleteCol() {
+	d.CurrentSheet.DeleteCol(d.CurrentSheet.Cursor.X)
+	// TODO: relinking
+}
+
+func (d *Document) FindCell(cellName string) (int, int, error) {
+	// TODO: accept sheet name in request
+	return cellNameToXY(cellName)
+}
+
 func (d *Document) sheetByIdx(idx int) *sheet.Sheet {
 	for _, s := range d.Sheets {
 		if s.Idx == idx {

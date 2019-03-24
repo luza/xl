@@ -102,6 +102,25 @@ func (a *App) pageDown() bool {
 	return true
 }
 
+// moveCursorRight moves cursor right on one cell.
+func (a *App) moveCursorTo(x, y int) {
+	a.doc.CurrentSheet.Cursor.X = x
+	if a.doc.CurrentSheet.Cursor.X >= a.doc.CurrentSheet.Viewport.Left+a.output.ViewportWidth() {
+		a.doc.CurrentSheet.Viewport.Left = a.doc.CurrentSheet.Cursor.X - a.output.ViewportWidth() + 1
+	}
+	if a.doc.CurrentSheet.Cursor.X < a.doc.CurrentSheet.Viewport.Left {
+		a.doc.CurrentSheet.Viewport.Left = a.doc.CurrentSheet.Cursor.X
+	}
+	a.doc.CurrentSheet.Cursor.Y = y
+	if a.doc.CurrentSheet.Cursor.Y >= a.doc.CurrentSheet.Viewport.Top+a.output.ViewportHeight() {
+		a.doc.CurrentSheet.Viewport.Top = a.doc.CurrentSheet.Cursor.Y - a.output.ViewportHeight() + 1
+	}
+	if a.doc.CurrentSheet.Cursor.Y < a.doc.CurrentSheet.Viewport.Top {
+		a.doc.CurrentSheet.Viewport.Top = a.doc.CurrentSheet.Cursor.Y
+	}
+	a.output.SetDirty(ui.DirtyHRuler | ui.DirtyVRuler | ui.DirtyGrid | ui.DirtyFormulaLine)
+}
+
 // inputCommand opens inline editor in status line, with ':' prompt.
 // Once user finishes command input, processes the command.
 func (a *App) inputCommand() bool {
