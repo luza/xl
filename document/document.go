@@ -39,6 +39,8 @@ func NewWithEmptySheet() *Document {
 	}
 }
 
+// The maximum sheet name length is 31 characters. If the sheet name length is exceeded an error is thrown.
+// These special characters are also not allowed: : \ / ? * [ ]
 func (d *Document) NewSheet(title string) (*sheet.Sheet, error) {
 	if title == "" {
 		title = fmt.Sprintf("Sheet %d", d.maxSheetIdx+1)

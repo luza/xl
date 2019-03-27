@@ -114,28 +114,29 @@ var lex = lexer.Must(lexer.Regexp(
 		`|(?P<Boolean>(?i)TRUE|FALSE)` +
 		`|(?P<FuncName>[A-z0-9]+)\(` +
 		`|(?P<Sheet>[A-z0-9_]+|'([^']|'')*')!` +
-		`|(?P<Cell>[A-z]+[1-9][0-9]*)`,
+		`|(?P<Cell>\$?[A-z]+\$?[1-9][0-9]*)`,
 ))
 
 // Parse parses the formula, extracts variables from it and builds
 // functions chain that perform the expression representing by the formula..
-func Parse(source string) (Function, *VarBin, error) {
+func Parse(source string) (Function, *Expression, *VarBin, error) {
 	// TODO: do that once
 	p, err := participle.Build(
 		&Expression{},
 		participle.Lexer(lex),
 		participle.CaseInsensitive("Boolean"),
+		participle.Upper("Cell"),
 	)
 	if err != nil {
 		panic(err)
 	}
 	expression := &Expression{}
 	if err = p.ParseString(source, expression); err != nil {
-		return nil, nil, value.NewError(value.ErrorKindFormula, err.Error())
+		return nil, nil, nil, value.NewError(value.ErrorKindFormula, err.Error())
 	}
 	vb := &VarBin{}
 	f, _ := buildFuncFromEquality(expression.Equality, vb)
-	return f, vb, nil
+	return f, expression, vb, nil
 }
 
 func buildFuncFromEquality(eq *Equality, vars *VarBin) (Function, int) {

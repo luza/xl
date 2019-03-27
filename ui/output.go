@@ -2,6 +2,7 @@ package ui
 
 import (
 	"xl/document/sheet"
+	"xl/formula"
 )
 
 const (
@@ -41,6 +42,7 @@ type CellView struct {
 	Name        string
 	DisplayText string
 	Error       *string
+	Expression  *formula.Expression
 }
 
 type RowView struct {
@@ -62,6 +64,7 @@ type SheetView struct {
 
 type FormulaLineView struct {
 	DisplayText string
+	Expression  *formula.Expression
 }
 
 type DocView struct {

@@ -30,8 +30,9 @@ type Cell struct {
 	boolValue    bool
 	formulaValue formula.Function
 
-	// formula arguments
-	args []value.Value
+	// formula params
+	expression *formula.Expression
+	args       []value.Value
 }
 
 func NewCellEmpty() *Cell {
@@ -59,6 +60,18 @@ func (c *Cell) EraseValue() {
 // RawValue returns raw cell value as string. No evaluation performed.
 func (c *Cell) RawValue() string {
 	return c.rawValue
+}
+
+func (c *Cell) Expression(ec *value.EvalContext) *formula.Expression {
+	if c.valueType == CellValueUntyped {
+		if err := c.evaluateType(ec); err != nil {
+			return nil
+		}
+	}
+	if c.valueType != CellValueTypeFormula {
+		return nil
+	}
+	return c.expression
 }
 
 func (c *Cell) BoolValue(ec *value.EvalContext) (bool, error) {
@@ -177,11 +190,13 @@ func (c *Cell) evaluateType(ec *value.EvalContext) error {
 	case CellValueTypeFormula:
 		c.formulaValue = nil
 		c.args = nil
-		formulaValue, vars, err := formula.Parse(c.rawValue)
+		f, expr, vars, err := formula.Parse(c.rawValue)
 		if err != nil {
 			return err
 		}
-		c.formulaValue = formulaValue
+		c.formulaValue = f
+		c.expression = expr
+		c.rawValue = expr.String() // need this?
 		c.args, err = makeLinks(vars, ec)
 		if err != nil {
 			return err

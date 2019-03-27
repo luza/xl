@@ -28,6 +28,7 @@ func (a *App) CellView(x, y int) *ui.CellView {
 	return &ui.CellView{
 		Name:        cellName(x, y),
 		DisplayText: v,
+		Expression:  c.Expression(value.NewEvalContext(a.doc)),
 	}
 }
 
@@ -46,19 +47,19 @@ func (a *App) ColView(n int) *ui.ColView {
 }
 
 func (a *App) SheetView() *ui.SheetView {
-	cell := a.doc.CurrentSheet.CellUnderCursor()
-	var formulaText string
-	if cell != nil {
-		formulaText = cell.RawValue()
-	}
-	return &ui.SheetView{
+	c := a.doc.CurrentSheet.CellUnderCursor()
+	sv := &ui.SheetView{
 		Name:     a.doc.CurrentSheet.Title,
 		Cursor:   a.doc.CurrentSheet.Cursor,
 		Viewport: a.doc.CurrentSheet.Viewport,
-		FormulaLineView: ui.FormulaLineView{
-			DisplayText: formulaText,
-		},
 	}
+	if c != nil {
+		sv.FormulaLineView = ui.FormulaLineView{
+			DisplayText: c.RawValue(),
+			Expression:  c.Expression(value.NewEvalContext(a.doc)),
+		}
+	}
+	return sv
 }
 
 func (a *App) DocView() *ui.DocView {

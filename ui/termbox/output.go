@@ -3,6 +3,8 @@ package termbox
 import (
 	"xl/ui"
 
+	"bytes"
+
 	"github.com/nsf/termbox-go"
 )
 
@@ -39,7 +41,15 @@ func (t *Termbox) RefreshView() {
 		formulaLineView := sheetView.FormulaLineView
 		currentCellName := t.dataDelegate.CellView(sheetView.Cursor.X, sheetView.Cursor.Y).Name
 		drawCell(0, 0, t.screenWidth, formulaLineHeight, currentCellName, colorYellow, colorBlack)
-		drawCell(len(currentCellName)+1, 0, t.screenWidth, formulaLineHeight, formulaLineView.DisplayText, colorWhite, colorBlack)
+		text := formulaLineView.DisplayText
+		if formulaLineView.Expression != nil {
+			var buf bytes.Buffer
+			formulaLineView.Expression.Output(func(s string, t int) {
+				buf.WriteString(s)
+			})
+			text = buf.String()
+		}
+		drawCell(len(currentCellName)+1, 0, t.screenWidth, formulaLineHeight, text, colorWhite, colorBlack)
 	}
 
 	// vertical ruler
