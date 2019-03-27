@@ -92,7 +92,7 @@ type Primary struct {
 
 type Func struct {
 	Name      FuncName    `@FuncName`
-	Arguments []*Equality `@@ { "," @@ } ")"`
+	Arguments []*Equality `[ @@ { ";" @@ } ] ")"`
 }
 
 type CellRange struct {
@@ -108,7 +108,7 @@ type Cell struct {
 var lex = lexer.Must(lexer.Regexp(
 	`(\s+)` +
 		`|^=` +
-		`|(?P<Operators><>|<=|>=|[-+*/()=<>,:])` +
+		`|(?P<Operators><>|<=|>=|[-+*/()=<>;:])` +
 		`|(?P<Number>\d*\.?\d+([eE][-+]?\d+)?)` +
 		`|(?P<String>"([^"]|"")*")` +
 		`|(?P<Boolean>(?i)TRUE|FALSE)` +

@@ -21,6 +21,7 @@ type functionDef struct {
 var functions = map[string]functionDef{
 	"TRIM": {trim, 1, 1},
 	"SUM":  {sum, 1, maxArguments},
+	"IF":   {if_, 3, 3},
 	// ABS [Math and trigonometry] Returns the absolute value of a number
 	// ACCRINT [Financial] Returns the accrued interest for a security that pays periodic interest
 	// ACCRINTM [Financial] Returns the accrued interest for a security that pays interest at maturity
@@ -227,7 +228,6 @@ var functions = map[string]functionDef{
 	// HYPERLINK [Lookup and reference] Creates a shortcut or jump that opens a document stored on a network server, an intranet, or the Internet
 	// HYPGEOM.DIST [Statistical] Returns the hypergeometric distribution
 	// HYPGEOMDIST [Compatibility] Returns the hypergeometric distribution
-	// IF [Logical] Specifies a logical test to perform
 	// IFERROR [Logical] Returns a value you specify if a formula evaluates to an error; otherwise, returns the result of the formula
 	// IFNA [Logical] Returns the value you specify if the expression resolves to #N/A, otherwise returns the result of the expression
 	// IFS [Logical] Checks whether one or more conditions are met and returns a value that corresponds to the first TRUE condition.
@@ -518,4 +518,17 @@ func sum(ec *value.EvalContext, args []value.Value) (value.Value, error) {
 		s = s.Add(d)
 	}
 	return value.NewDecimalValue(s), nil
+}
+
+// IF [Logical] Specifies a logical test to perform
+func if_(ec *value.EvalContext, args []value.Value) (value.Value, error) {
+	b, err := args[0].BoolValue(ec)
+	if err != nil {
+		return value.Value{}, err
+	}
+	if b {
+		return args[1], nil
+	} else {
+		return args[2], nil
+	}
 }

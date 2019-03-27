@@ -82,7 +82,9 @@ func (e *Primary) Output(of OutputFunc) {
 	if e.Number != nil {
 		of(strconv.FormatFloat(*e.Number, 'f', -1, 64), OutputTypeNumber)
 	} else if e.String != nil {
+		of("\"", OutputTypeSymbol)
 		of(string(*e.String), OutputTypeString)
+		of("\"", OutputTypeSymbol)
 	} else if e.Boolean != nil {
 		if *e.Boolean {
 			of("TRUE", OutputTypeBoolean)
@@ -99,10 +101,12 @@ func (e *Primary) Output(of OutputFunc) {
 func (e *Func) Output(of OutputFunc) {
 	of(string(e.Name), OutputTypeFunction)
 	of("(", OutputTypeSymbol)
-	for _, a := range e.Arguments {
+	for i, a := range e.Arguments {
 		a.Output(of)
-		of(",", OutputTypeSymbol)
-		of(" ", OutputTypeWhitespace)
+		if i < len(e.Arguments)-1 {
+			of(";", OutputTypeSymbol)
+			of(" ", OutputTypeWhitespace)
+		}
 	}
 	of(")", OutputTypeSymbol)
 }
@@ -117,7 +121,10 @@ func (e *CellRange) Output(of OutputFunc) {
 
 func (e *Cell) Output(of OutputFunc) {
 	if e.Sheet != nil {
+		// FIXME: use '' only if necessary
+		of("'", OutputTypeSymbol)
 		of(string(*e.Sheet), OutputTypeSheet)
+		of("'", OutputTypeSymbol)
 		of("!", OutputTypeSymbol)
 	}
 	of(e.Cell, OutputTypeCell)
