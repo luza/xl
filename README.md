@@ -3,7 +3,7 @@ xl
 
 Console based spreadsheets. Fast and memory efficient.
 
-![](http://i7.5cm.ru/i/60qf.png)
+![Screenshot](https://i.ibb.co/6Hd09pK/2019-03-27-21-29-42.png)
 
 Features:
 - read and write csv files
