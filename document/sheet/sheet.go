@@ -150,12 +150,12 @@ func (s *Sheet) FindSegment(x, y int) Segment {
 	return nil
 }
 
-func (s *Sheet) InsertRow(y int) {
+func (s *Sheet) InsertEmptyRow(y int) {
 	for _, segment := range s.Segments {
 		size := segment.Size()
 		if segment.ContainsY(y) {
 			// segments that inserting line intersects need to be splitted or expanded
-			segment.InsertRow(y - size.Y)
+			segment.InsertEmptyRow(y - size.Y)
 		} else if size.Y > y {
 			// segments laying below inserting line need to be shifted down
 			segment.Move(size.X, size.Y+1)
@@ -163,12 +163,12 @@ func (s *Sheet) InsertRow(y int) {
 	}
 }
 
-func (s *Sheet) InsertCol(x int) {
+func (s *Sheet) InsertEmptyCol(x int) {
 	for _, segment := range s.Segments {
 		size := segment.Size()
 		if segment.ContainsX(x) {
 			// segments that inserting column intersects need to be splitted or expanded
-			segment.InsertCol(x - size.X)
+			segment.InsertEmptyCol(x - size.X)
 		} else if size.X > x {
 			// segments laying right of inserting column need to be shifted right
 			segment.Move(size.X+1, size.Y)

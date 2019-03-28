@@ -5,6 +5,7 @@ import (
 	"xl/document/sheet"
 	"xl/fs"
 	"xl/fs/bufcsv"
+	"xl/fs/bufxlsx"
 	"xl/ui"
 
 	"errors"
@@ -60,7 +61,7 @@ func (a *App) ResetDocument() {
 
 // OpenDocument reads document from file with given name.
 func (a *App) OpenDocument(filename string) error {
-	a.file = bufcsv.NewWithFilename(filename)
+	a.file = guessFileFormat(filename)
 	var err error
 	a.doc, err = a.file.Open()
 	if err != nil {
@@ -131,5 +132,13 @@ func (a *App) loadRC() {
 			continue
 		}
 		a.processCommand(l)
+	}
+}
+
+func guessFileFormat(filename string) fs.FileInterface {
+	if strings.HasSuffix(filename, ".xlsx") {
+		return bufxlsx.NewWithFilename(filename)
+	} else {
+		return bufcsv.NewWithFilename(filename)
 	}
 }

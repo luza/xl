@@ -167,12 +167,12 @@ func (a *App) cmdPasteCell() {
 }
 
 func (a *App) cmdInsertRow(n int) {
-	a.doc.InsertRow(n)
+	a.doc.InsertEmptyRow(n)
 	a.output.SetDirty(ui.DirtyGrid | ui.DirtyFormulaLine)
 }
 
 func (a *App) cmdInsertCol(n int) {
-	a.doc.InsertCol(n)
+	a.doc.InsertEmptyCol(n)
 	a.output.SetDirty(ui.DirtyGrid | ui.DirtyFormulaLine)
 }
 

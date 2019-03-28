@@ -4,9 +4,14 @@ import (
 	"fmt"
 	"regexp"
 	"strconv"
+	"strings"
 
 	"xl/document/sheet"
 	"xl/document/value"
+)
+
+const (
+	maxSheetTitleLength = 31
 )
 
 type Document struct {
@@ -20,7 +25,7 @@ type Document struct {
 	linksRegistry map[int]map[int]map[int]*value.Link
 }
 
-var cellNamePattern = regexp.MustCompile("^([A-Z]+)([0-9]+)$")
+var cellNamePattern = regexp.MustCompile(`^\$?([A-Z]+)\$?([0-9]+)$`)
 
 func New() *Document {
 	return &Document{
@@ -39,18 +44,23 @@ func NewWithEmptySheet() *Document {
 	}
 }
 
-// The maximum sheet name length is 31 characters. If the sheet name length is exceeded an error is thrown.
-// These special characters are also not allowed: : \ / ? * [ ]
+// NewSheet creates a new sheet in the document. If title is not present, generated one will be used.
 func (d *Document) NewSheet(title string) (*sheet.Sheet, error) {
-	if title == "" {
-		title = fmt.Sprintf("Sheet %d", d.maxSheetIdx+1)
-	} else {
+	if title != "" {
+		if len(title) > maxSheetTitleLength {
+			return nil, value.NewError(value.ErrorKindName, "sheet title must be up to 31 characters long")
+		}
+		if strings.ContainsAny(title, ":\\/?*[]") {
+			return nil, value.NewError(value.ErrorKindName, "sheet title can not include : \\ / ? * [ ]")
+		}
 		// ensure title is unique
 		for _, s := range d.Sheets {
 			if s.Title == title {
-				return nil, value.NewError(value.ErrorKindName, "duplicating sheet name")
+				return nil, value.NewError(value.ErrorKindName, "duplicating sheet title")
 			}
 		}
+	} else {
+		title = fmt.Sprintf("Sheet %d", d.maxSheetIdx+1)
 	}
 	s := sheet.New(d.maxSheetIdx+1, title)
 	d.Sheets = append(d.Sheets, s)
@@ -58,33 +68,39 @@ func (d *Document) NewSheet(title string) (*sheet.Sheet, error) {
 	return s, nil
 }
 
-func (d *Document) InsertRow(n int) {
+// InsertEmptyRow inserts new empty row at position of cursor plus N.
+func (d *Document) InsertEmptyRow(n int) {
 	d.CurrentSheet.Cursor.Y += n
-	d.CurrentSheet.InsertRow(d.CurrentSheet.Cursor.Y)
+	d.CurrentSheet.InsertEmptyRow(d.CurrentSheet.Cursor.Y)
 	// TODO: relinking
 }
 
-func (d *Document) InsertCol(n int) {
+// InsertEmptyCol inserts new empty column at position of cursor plus N.
+func (d *Document) InsertEmptyCol(n int) {
 	d.CurrentSheet.Cursor.X += n
-	d.CurrentSheet.InsertCol(d.CurrentSheet.Cursor.X)
+	d.CurrentSheet.InsertEmptyCol(d.CurrentSheet.Cursor.X)
 	// TODO: relinking
 }
 
+// DeleteRow deletes row under cursor.
 func (d *Document) DeleteRow() {
 	d.CurrentSheet.DeleteRow(d.CurrentSheet.Cursor.Y)
 	// TODO: relinking
 }
 
+// DeleteCol deletes column under cursor.
 func (d *Document) DeleteCol() {
 	d.CurrentSheet.DeleteCol(d.CurrentSheet.Cursor.X)
 	// TODO: relinking
 }
 
+// FindCell finds position of the cell with given name.
 func (d *Document) FindCell(cellName string) (int, int, error) {
 	// TODO: accept sheet name in request
 	return cellNameToXY(cellName)
 }
 
+// sheetByIdx returns sheet by its index.
 func (d *Document) sheetByIdx(idx int) *sheet.Sheet {
 	for _, s := range d.Sheets {
 		if s.Idx == idx {
@@ -94,6 +110,7 @@ func (d *Document) sheetByIdx(idx int) *sheet.Sheet {
 	return nil
 }
 
+// cellNameToXY transforms cell name into X, Y coordinates.
 func cellNameToXY(name string) (int, int, error) {
 	res := cellNamePattern.FindStringSubmatch(name)
 	if len(res) < 3 {

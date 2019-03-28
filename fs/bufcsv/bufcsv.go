@@ -69,7 +69,7 @@ func (b *BufCSV) Open() (*document.Document, error) {
 	}
 
 	// make a sheet
-	s, _ := d.NewSheet(b.filename)
+	s, _ := d.NewSheet("")
 	s.AddStaticSegment(0, 0, width, height, cells)
 	return d, nil
 }
