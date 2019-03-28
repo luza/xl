@@ -3,7 +3,7 @@ package termbox
 import (
 	"xl/ui"
 
-	"github.com/nsf/termbox-go"
+	"github.com/gdamore/tcell/termbox"
 )
 
 type Termbox struct {

@@ -1,7 +1,7 @@
 package ui
 
 import (
-	"github.com/nsf/termbox-go"
+	"github.com/gdamore/tcell/termbox"
 )
 
 type InputInterface interface {
