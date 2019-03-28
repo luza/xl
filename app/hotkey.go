@@ -1,6 +1,6 @@
 package app
 
-import "github.com/nsf/termbox-go"
+import "github.com/gdamore/tcell/termbox"
 
 type Key struct {
 	Mod termbox.Modifier // one of Mod* constants or 0

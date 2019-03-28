@@ -5,7 +5,7 @@ import (
 
 	"errors"
 
-	"github.com/nsf/termbox-go"
+	"github.com/gdamore/tcell/termbox"
 )
 
 // ReadKey blocks until new key is read. Returns the key read.

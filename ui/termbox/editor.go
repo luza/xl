@@ -6,7 +6,7 @@ import (
 	"errors"
 	"unicode/utf8"
 
-	"github.com/nsf/termbox-go"
+	"github.com/gdamore/tcell/termbox"
 )
 
 func (t *Termbox) enterEditorMode(config *editorConfig) (string, error) {
@@ -119,8 +119,8 @@ func (e *editor) OnKey(ev ui.KeyEvent) bool {
 		//v.on_vcommand(vcommand_move_view_half_forward, 0)
 	case termbox.KeyCtrlL:
 		//v.on_vcommand(vcommand_recenter, 0)
-	case termbox.KeyCtrlSlash:
-		//v.on_vcommand(vcommand_undo, 0)
+	//case termbox.KeyCtrlSlash:
+	//v.on_vcommand(vcommand_undo, 0)
 	case termbox.KeySpace:
 		e.insertRune(' ')
 	case termbox.KeyEnter, termbox.KeyCtrlJ:
@@ -144,10 +144,10 @@ func (e *editor) OnKey(ev ui.KeyEvent) bool {
 		//v.on_vcommand(vcommand_move_view_half_backward, 0)
 	case termbox.KeyTab:
 		e.insertRune('\t')
-	case termbox.KeyCtrlSpace:
-		//if ev.Ch == 0 {
-		//	v.set_mark()
-		//}
+	//case termbox.KeyCtrlSpace:
+	//if ev.Ch == 0 {
+	//	v.set_mark()
+	//}
 	case termbox.KeyCtrlW:
 		//v.on_vcommand(vcommand_kill_region, 0)
 	case termbox.KeyCtrlY:

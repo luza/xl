@@ -6,7 +6,7 @@ import (
 
 	"fmt"
 
-	"github.com/nsf/termbox-go"
+	"github.com/gdamore/tcell/termbox"
 )
 
 // processKeyEvent does the job associated with the key press.
