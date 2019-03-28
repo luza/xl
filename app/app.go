@@ -13,6 +13,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/gdamore/tcell/termbox"
 	"go.uber.org/zap"
 )
 
@@ -96,18 +97,24 @@ func (a *App) WriteAs(filename string) error {
 
 // Loop is the main loop, reads and processes key presses.
 func (a *App) Loop() {
+
 	for {
-		event, err := a.input.ReadKey()
-		if err != nil {
-			a.logger.Error("input read error: " + err.Error())
-			return
-		}
-		if keyEvent, ok := event.(ui.KeyEvent); ok {
-			stop := a.processKeyEvent(keyEvent)
+		switch ev := termbox.PollEvent(); ev.Type {
+		case termbox.EventKey:
+			e := ui.KeyEvent{
+				Mod: ev.Mod,
+				Key: ev.Key,
+				Ch:  ev.Ch,
+			}
+			stop := a.processKeyEvent(e)
 			if stop {
 				return
 			}
-		} else {
+		case termbox.EventResize:
+			a.output.RefreshView()
+		case termbox.EventMouse:
+			//handling event mouse
+		case termbox.EventError:
 			a.logger.Error("unknown input event")
 			return
 		}
