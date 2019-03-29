@@ -8,5 +8,7 @@ Console based spreadsheets. Fast and memory efficient.
 Features:
 - read and write csv files
 - vim-like commands and control
+- basic formulas support
+- read from xlsx
 
 Under active development. Contributions are appreciated.
