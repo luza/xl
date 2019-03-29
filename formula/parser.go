@@ -79,8 +79,14 @@ type Addition struct {
 }
 
 type Multiplication struct {
-	Unary *Unary          `@@`
+	Power *Power          `@@`
 	Op    string          `[ @( "/" | "*" )`
+	Next  *Multiplication `  @@ ]`
+}
+
+type Power struct {
+	Unary *Unary          `@@`
+	Op    string          `[ @( "^" )`
 	Next  *Multiplication `  @@ ]`
 }
 
@@ -117,7 +123,7 @@ type Cell struct {
 var lex = lexer.Must(lexer.Regexp(
 	`(\s+)` +
 		`|^=` +
-		`|(?P<Operators><>|<=|>=|[-+*/()=<>;:])` +
+		`|(?P<Operators><>|<=|>=|[-+*/()=<>;:\^])` +
 		`|(?P<Number>\d*\.?\d+([eE][-+]?\d+)?)` +
 		`|(?P<String>"([^"]|"")*")` +
 		`|(?P<Boolean>(?i)TRUE|FALSE)` +
@@ -209,9 +215,9 @@ func buildFuncFromAddition(a *Addition) (Function, int) {
 
 func buildFuncFromMultiplication(m *Multiplication) (Function, int) {
 	if m.Next == nil {
-		return buildFuncFromUnary(m.Unary)
+		return buildFuncFromPower(m.Power)
 	}
-	subFunc1, consumedArgs1 := buildFuncFromUnary(m.Unary)
+	subFunc1, consumedArgs1 := buildFuncFromPower(m.Power)
 	subFunc2, consumedArgs2 := buildFuncFromMultiplication(m.Next)
 	f := func(ec *value.EvalContext, args []value.Value) (value.Value, error) {
 		var v1, v2 value.Value
@@ -223,6 +229,26 @@ func buildFuncFromMultiplication(m *Multiplication) (Function, int) {
 			return value.Value{}, err
 		}
 		return evalOperator(ec, m.Op, v1, v2)
+	}
+	return f, consumedArgs1 + consumedArgs2
+}
+
+func buildFuncFromPower(p *Power) (Function, int) {
+	if p.Next == nil {
+		return buildFuncFromUnary(p.Unary)
+	}
+	subFunc1, consumedArgs1 := buildFuncFromUnary(p.Unary)
+	subFunc2, consumedArgs2 := buildFuncFromMultiplication(p.Next)
+	f := func(ec *value.EvalContext, args []value.Value) (value.Value, error) {
+		var v1, v2 value.Value
+		var err error
+		if v1, err = subFunc1(ec, args); err != nil {
+			return value.Value{}, err
+		}
+		if v2, err = subFunc2(ec, args[consumedArgs1:]); err != nil {
+			return value.Value{}, err
+		}
+		return evalOperator(ec, p.Op, v1, v2)
 	}
 	return f, consumedArgs1 + consumedArgs2
 }

@@ -48,6 +48,14 @@ func (e *Addition) Output(of OutputFunc) {
 }
 
 func (e *Multiplication) Output(of OutputFunc) {
+	e.Power.Output(of)
+	if e.Op != "" && e.Next != nil {
+		of(e.Op, OutputTypeOperator)
+		e.Next.Output(of)
+	}
+}
+
+func (e *Power) Output(of OutputFunc) {
 	e.Unary.Output(of)
 	if e.Op != "" && e.Next != nil {
 		of(e.Op, OutputTypeOperator)

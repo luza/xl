@@ -29,6 +29,14 @@ func (e *Addition) Variables() []*Variable {
 }
 
 func (e *Multiplication) Variables() []*Variable {
+	vars := e.Power.Variables()
+	if e.Next != nil {
+		vars = append(vars, e.Next.Variables()...)
+	}
+	return vars
+}
+
+func (e *Power) Variables() []*Variable {
 	vars := e.Unary.Variables()
 	if e.Next != nil {
 		vars = append(vars, e.Next.Variables()...)

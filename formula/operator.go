@@ -139,6 +139,14 @@ func evalBoolOperator(op string, args []bool) (value.Value, error) {
 			// FALSE - FALSE = 0
 			return value.NewDecimalValue(decimal.Zero), nil
 		}
+	case "^":
+		if args[0] || !args[1] {
+			// TRUE^FALSE = 1, TRUE^TRUE = 1, FALSE^FALSE = 1 (in Excel FALSE^FALSE = error)
+			return value.NewDecimalValue(decimal.NewFromFloat(1)), nil
+		} else {
+			// FALSE^TRUE = 0
+			return value.NewDecimalValue(decimal.Zero), nil
+		}
 	default:
 		panic("unsupported operator")
 	}
@@ -179,6 +187,8 @@ func evalDecimalOperator(op string, args []decimal.Decimal) (value.Value, error)
 			return value.Value{}, value.NewError(value.ErrorKindDiv0, "division by zero")
 		}
 		return value.NewDecimalValue(args[0].Div(args[1])), nil
+	case "^":
+		return value.NewDecimalValue(args[0].Pow(args[1])), nil
 	default:
 		panic("unsupported operator")
 	}
@@ -203,7 +213,7 @@ func evalStringOperator(op string, args []string) (value.Value, error) {
 		return value.NewBoolValue(res > 0), nil
 	case ">=":
 		return value.NewBoolValue(res >= 0), nil
-	case "+", "-", "*", "/":
+	case "+", "-", "*", "/", "^":
 		return value.Value{}, value.NewError(value.ErrorKindFormula, "arithmetic (%s) on string operand", op)
 	default:
 		panic("unsupported operator")
