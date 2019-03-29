@@ -1,6 +1,7 @@
 package formula
 
 import (
+	"bytes"
 	"strings"
 
 	"xl/document/value"
@@ -51,6 +52,14 @@ type Expression struct {
 	Equality *Equality `"=" @@`
 }
 
+func (e *Expression) String() string {
+	var buf bytes.Buffer
+	e.Output(func(s string, i int) {
+		buf.WriteString(s)
+	})
+	return buf.String()
+}
+
 type Equality struct {
 	Comparison *Comparison `@@`
 	Op         string      `[ @( "<>" | "=" )`
@@ -82,12 +91,12 @@ type Unary struct {
 }
 
 type Primary struct {
-	SubExpression *Equality  `"(" @@ ")" `
-	Number        *float64   `| @Number`
-	String        *String    `| @String`
-	Boolean       *Boolean   `| @("TRUE" | "FALSE")`
-	Func          *Func      `| @@`
-	CellRange     *CellRange `| @@`
+	SubExpression *Equality `"(" @@ ")" `
+	Number        *float64  `| @Number`
+	String        *String   `| @String`
+	Boolean       *Boolean  `| @("TRUE" | "FALSE")`
+	Func          *Func     `| @@`
+	Variable      *Variable `| @@`
 }
 
 type Func struct {
@@ -95,7 +104,7 @@ type Func struct {
 	Arguments []*Equality `[ @@ { ";" @@ } ] ")"`
 }
 
-type CellRange struct {
+type Variable struct {
 	Cell   *Cell `@@`
 	CellTo *Cell `[ ":" @@ ]`
 }
@@ -119,7 +128,7 @@ var lex = lexer.Must(lexer.Regexp(
 
 // Parse parses the formula, extracts variables from it and builds
 // functions chain that perform the expression representing by the formula..
-func Parse(source string) (Function, *Expression, *VarBin, error) {
+func Parse(source string) (Function, *Expression, error) {
 	// TODO: do that once
 	p, err := participle.Build(
 		&Expression{},
@@ -132,19 +141,18 @@ func Parse(source string) (Function, *Expression, *VarBin, error) {
 	}
 	expression := &Expression{}
 	if err = p.ParseString(source, expression); err != nil {
-		return nil, nil, nil, value.NewError(value.ErrorKindFormula, err.Error())
+		return nil, nil, value.NewError(value.ErrorKindFormula, err.Error())
 	}
-	vb := &VarBin{}
-	f, _ := buildFuncFromEquality(expression.Equality, vb)
-	return f, expression, vb, nil
+	f, _ := buildFuncFromEquality(expression.Equality)
+	return f, expression, nil
 }
 
-func buildFuncFromEquality(eq *Equality, vars *VarBin) (Function, int) {
+func buildFuncFromEquality(eq *Equality) (Function, int) {
 	if eq.Next == nil {
-		return buildFuncFromComparison(eq.Comparison, vars)
+		return buildFuncFromComparison(eq.Comparison)
 	}
-	subFunc1, consumedArgs1 := buildFuncFromComparison(eq.Comparison, vars)
-	subFunc2, consumedArgs2 := buildFuncFromEquality(eq.Next, vars)
+	subFunc1, consumedArgs1 := buildFuncFromComparison(eq.Comparison)
+	subFunc2, consumedArgs2 := buildFuncFromEquality(eq.Next)
 	f := func(ec *value.EvalContext, args []value.Value) (value.Value, error) {
 		var v1, v2 value.Value
 		var err error
@@ -159,12 +167,12 @@ func buildFuncFromEquality(eq *Equality, vars *VarBin) (Function, int) {
 	return f, consumedArgs1 + consumedArgs2
 }
 
-func buildFuncFromComparison(cmp *Comparison, vars *VarBin) (Function, int) {
+func buildFuncFromComparison(cmp *Comparison) (Function, int) {
 	if cmp.Next == nil {
-		return buildFuncFromAddition(cmp.Addition, vars)
+		return buildFuncFromAddition(cmp.Addition)
 	}
-	subFunc1, consumedArgs1 := buildFuncFromAddition(cmp.Addition, vars)
-	subFunc2, consumedArgs2 := buildFuncFromComparison(cmp.Next, vars)
+	subFunc1, consumedArgs1 := buildFuncFromAddition(cmp.Addition)
+	subFunc2, consumedArgs2 := buildFuncFromComparison(cmp.Next)
 	f := func(ec *value.EvalContext, args []value.Value) (value.Value, error) {
 		var v1, v2 value.Value
 		var err error
@@ -179,12 +187,12 @@ func buildFuncFromComparison(cmp *Comparison, vars *VarBin) (Function, int) {
 	return f, consumedArgs1 + consumedArgs2
 }
 
-func buildFuncFromAddition(a *Addition, vars *VarBin) (Function, int) {
+func buildFuncFromAddition(a *Addition) (Function, int) {
 	if a.Next == nil {
-		return buildFuncFromMultiplication(a.Multiplication, vars)
+		return buildFuncFromMultiplication(a.Multiplication)
 	}
-	subFunc1, consumedArgs1 := buildFuncFromMultiplication(a.Multiplication, vars)
-	subFunc2, consumedArgs2 := buildFuncFromAddition(a.Next, vars)
+	subFunc1, consumedArgs1 := buildFuncFromMultiplication(a.Multiplication)
+	subFunc2, consumedArgs2 := buildFuncFromAddition(a.Next)
 	f := func(ec *value.EvalContext, args []value.Value) (value.Value, error) {
 		var v1, v2 value.Value
 		var err error
@@ -199,12 +207,12 @@ func buildFuncFromAddition(a *Addition, vars *VarBin) (Function, int) {
 	return f, consumedArgs1 + consumedArgs2
 }
 
-func buildFuncFromMultiplication(m *Multiplication, vars *VarBin) (Function, int) {
+func buildFuncFromMultiplication(m *Multiplication) (Function, int) {
 	if m.Next == nil {
-		return buildFuncFromUnary(m.Unary, vars)
+		return buildFuncFromUnary(m.Unary)
 	}
-	subFunc1, consumedArgs1 := buildFuncFromUnary(m.Unary, vars)
-	subFunc2, consumedArgs2 := buildFuncFromMultiplication(m.Next, vars)
+	subFunc1, consumedArgs1 := buildFuncFromUnary(m.Unary)
+	subFunc2, consumedArgs2 := buildFuncFromMultiplication(m.Next)
 	f := func(ec *value.EvalContext, args []value.Value) (value.Value, error) {
 		var v1, v2 value.Value
 		var err error
@@ -219,9 +227,9 @@ func buildFuncFromMultiplication(m *Multiplication, vars *VarBin) (Function, int
 	return f, consumedArgs1 + consumedArgs2
 }
 
-func buildFuncFromUnary(u *Unary, vars *VarBin) (Function, int) {
+func buildFuncFromUnary(u *Unary) (Function, int) {
 	if u.Unary != nil {
-		subFunc, consumedArgs := buildFuncFromUnary(u.Unary, vars)
+		subFunc, consumedArgs := buildFuncFromUnary(u.Unary)
 		f := func(ec *value.EvalContext, args []value.Value) (value.Value, error) {
 			v, err := subFunc(ec, args)
 			if err != nil {
@@ -231,13 +239,13 @@ func buildFuncFromUnary(u *Unary, vars *VarBin) (Function, int) {
 		}
 		return f, consumedArgs
 	} else if u.Primary.SubExpression != nil {
-		return buildFuncFromEquality(u.Primary.SubExpression, vars)
+		return buildFuncFromEquality(u.Primary.SubExpression)
 	} else if u.Primary.Func != nil {
 		consumedArgs := make([]int, len(u.Primary.Func.Arguments))
 		subFunc := make([]Function, len(u.Primary.Func.Arguments))
 		totalConsumedArgs := 0
 		for i := range u.Primary.Func.Arguments {
-			subFunc[i], consumedArgs[i] = buildFuncFromEquality(u.Primary.Func.Arguments[i], vars)
+			subFunc[i], consumedArgs[i] = buildFuncFromEquality(u.Primary.Func.Arguments[i])
 			totalConsumedArgs += consumedArgs[i]
 		}
 		f := func(ec *value.EvalContext, args []value.Value) (value.Value, error) {
@@ -270,7 +278,6 @@ func buildFuncFromUnary(u *Unary, vars *VarBin) (Function, int) {
 		}
 		return f, 0
 	} else {
-		vars.Vars = append(vars.Vars, newVar(u.Primary.CellRange))
 		f := func(ec *value.EvalContext, args []value.Value) (value.Value, error) {
 			if len(args) == 0 {
 				panic("too few arguments")

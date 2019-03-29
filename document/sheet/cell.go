@@ -71,6 +71,10 @@ func (c *Cell) Expression(ec *value.EvalContext) *formula.Expression {
 	if c.valueType != CellValueTypeFormula {
 		return nil
 	}
+	// actualize variables from links
+	//for i, v := range c.expression.Variables() {
+	//	updateVarFromLink(v, c.args[i])
+	//}
 	return c.expression
 }
 
@@ -190,14 +194,14 @@ func (c *Cell) evaluateType(ec *value.EvalContext) error {
 	case CellValueTypeFormula:
 		c.formulaValue = nil
 		c.args = nil
-		f, expr, vars, err := formula.Parse(c.rawValue)
+		f, expr, err := formula.Parse(c.rawValue)
 		if err != nil {
 			return err
 		}
 		c.formulaValue = f
 		c.expression = expr
 		c.rawValue = expr.String() // need this?
-		c.args, err = makeLinks(vars, ec)
+		c.args, err = makeLinks(expr.Variables(), ec)
 		if err != nil {
 			return err
 		}
@@ -227,17 +231,21 @@ func guessCellType(v string) (int, interface{}) {
 	return CellValueTypeText, v
 }
 
-func makeLinks(vb *formula.VarBin, ec *value.EvalContext) ([]value.Value, error) {
-	values := make([]value.Value, len(vb.Vars))
-	for i := range vb.Vars {
+func makeLinks(vars []*formula.Variable, ec *value.EvalContext) ([]value.Value, error) {
+	values := make([]value.Value, len(vars))
+	for i := range vars {
 		log.L.Error("converting var to link")
-		if vb.Vars[i].CellTo != nil {
+		if vars[i].CellTo != nil {
 			// range
 			//links[i] = dd.LinkRange(c.Cell, c.CellTo, c.Sheet)
 			//values[i] = value.NewLinkValue(l)
 		} else {
-			c := vb.Vars[i].Cell
-			l, err := ec.LinkRegistry.MakeLink(c.Cell, c.Sheet)
+			c := vars[i].Cell
+			var s string
+			if c.Sheet != nil {
+				s = string(*c.Sheet)
+			}
+			l, err := ec.LinkRegistry.MakeLink(c.Cell, s)
 			if err != nil {
 				return nil, err
 			}
@@ -246,3 +254,11 @@ func makeLinks(vb *formula.VarBin, ec *value.EvalContext) ([]value.Value, error)
 	}
 	return values, nil
 }
+
+//func updateVarFromLink(v *formula.Variable, val value.Value) error {
+//	l, err := val.Link()
+//	if err != nil {
+//		return err
+//	}
+//	l.
+//}

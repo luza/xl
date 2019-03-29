@@ -1,7 +1,6 @@
 package formula
 
 import (
-	"bytes"
 	"strconv"
 )
 
@@ -22,14 +21,6 @@ const (
 func (e *Expression) Output(of OutputFunc) {
 	of("=", OutputTypeSymbol)
 	e.Equality.Output(of)
-}
-
-func (e *Expression) String() string {
-	var buf bytes.Buffer
-	e.Output(func(s string, i int) {
-		buf.WriteString(s)
-	})
-	return buf.String()
 }
 
 func (e *Equality) Output(of OutputFunc) {
@@ -93,8 +84,8 @@ func (e *Primary) Output(of OutputFunc) {
 		}
 	} else if e.Func != nil {
 		e.Func.Output(of)
-	} else if e.CellRange != nil {
-		e.CellRange.Output(of)
+	} else if e.Variable != nil {
+		e.Variable.Output(of)
 	}
 }
 
@@ -111,7 +102,7 @@ func (e *Func) Output(of OutputFunc) {
 	of(")", OutputTypeSymbol)
 }
 
-func (e *CellRange) Output(of OutputFunc) {
+func (e *Variable) Output(of OutputFunc) {
 	e.Cell.Output(of)
 	if e.CellTo != nil {
 		of(":", OutputTypeSymbol)
