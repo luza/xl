@@ -6,6 +6,7 @@ import (
 	"errors"
 	"unicode/utf8"
 
+	"github.com/gdamore/tcell"
 	"github.com/gdamore/tcell/termbox"
 )
 
@@ -101,58 +102,56 @@ func newEditor(config *editorConfig) *editor {
 
 func (e *editor) OnKey(ev ui.KeyEvent) bool {
 	switch ev.Key {
-	case termbox.KeyCtrlF, termbox.KeyArrowRight:
+	case tcell.KeyCtrlF, tcell.KeyRight:
 		e.moveCursorForward()
-	case termbox.KeyCtrlB, termbox.KeyArrowLeft:
+	case tcell.KeyCtrlB, tcell.KeyLeft:
 		e.moveCursorBackward()
-	case termbox.KeyCtrlN, termbox.KeyArrowDown:
+	case tcell.KeyCtrlN, tcell.KeyDown:
 		e.moveCursorNextLine()
-	case termbox.KeyCtrlP, termbox.KeyArrowUp:
+	case tcell.KeyCtrlP, tcell.KeyUp:
 		e.moveCursorPrevLine()
-	case termbox.KeyCtrlE, termbox.KeyEnd:
+	case tcell.KeyCtrlE, tcell.KeyEnd:
 		//e.moveCursorEOL()
 		//v.on_vcommand(vcommand_move_cursor_end_of_line, 0)
-	case termbox.KeyCtrlA, termbox.KeyHome:
+	case tcell.KeyCtrlA, tcell.KeyHome:
 		//e.moveCursorBOL()
 		//v.on_vcommand(vcommand_move_cursor_beginning_of_line, 0)
-	case termbox.KeyCtrlV, termbox.KeyPgdn:
+	case tcell.KeyCtrlV, tcell.KeyPgDn:
 		//v.on_vcommand(vcommand_move_view_half_forward, 0)
-	case termbox.KeyCtrlL:
+	case tcell.KeyCtrlL:
 		//v.on_vcommand(vcommand_recenter, 0)
 	//case termbox.KeyCtrlSlash:
 	//v.on_vcommand(vcommand_undo, 0)
-	case termbox.KeySpace:
-		e.insertRune(' ')
-	case termbox.KeyEnter, termbox.KeyCtrlJ:
+	case tcell.KeyEnter, tcell.KeyCtrlJ:
 		if e.config.MaxLines <= 1 {
 			// exit editor when in single-line mode
 			return true
 		} else if e.linesCount < e.config.MaxLines {
 			e.insertRune('\n')
 		}
-	case termbox.KeyBackspace, termbox.KeyBackspace2:
-		if ev.Mod&termbox.ModAlt != 0 {
+	case tcell.KeyBackspace, tcell.KeyBackspace2:
+		if ev.Mod&tcell.ModAlt != 0 {
 			//e.deleteWordBackward()
 		} else {
 			e.deleteRuneBackward()
 		}
-	case termbox.KeyDelete, termbox.KeyCtrlD:
+	case tcell.KeyDelete, tcell.KeyCtrlD:
 		e.deleteRune()
-	case termbox.KeyCtrlK:
+	case tcell.KeyCtrlK:
 		//v.on_vcommand(vcommand_kill_line, 0)
-	case termbox.KeyPgup:
+	case tcell.KeyPgUp:
 		//v.on_vcommand(vcommand_move_view_half_backward, 0)
-	case termbox.KeyTab:
+	case tcell.KeyTab:
 		e.insertRune('\t')
 	//case termbox.KeyCtrlSpace:
 	//if ev.Ch == 0 {
 	//	v.set_mark()
 	//}
-	case termbox.KeyCtrlW:
+	case tcell.KeyCtrlW:
 		//v.on_vcommand(vcommand_kill_region, 0)
-	case termbox.KeyCtrlY:
+	case tcell.KeyCtrlY:
 		//v.on_vcommand(vcommand_yank, 0)
-	case termbox.KeyEsc:
+	case tcell.KeyEsc:
 		// edit editor, discard changes
 		return true
 	}

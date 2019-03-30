@@ -1,41 +1,43 @@
 package app
 
-import "github.com/gdamore/tcell/termbox"
+import (
+	"github.com/gdamore/tcell"
+)
 
 type Key struct {
-	Mod termbox.Modifier // one of Mod* constants or 0
-	Key termbox.Key      // one of Key* constants, invalid if 'Ch' is not 0
-	Ch  rune             // a unicode character
+	Mod tcell.ModMask
+	Key tcell.Key
+	Ch  rune
 }
 
 var HotKeys = map[string]Key{
-	"a": {0, 0, 'a'},
-	"b": {0, 0, 'b'},
-	"c": {0, 0, 'c'},
-	"d": {0, 0, 'd'},
-	"e": {0, 0, 'e'},
-	"f": {0, 0, 'f'},
-	"g": {0, 0, 'g'},
-	"h": {0, 0, 'h'},
-	"i": {0, 0, 'i'},
-	"j": {0, 0, 'j'},
-	"k": {0, 0, 'k'},
-	"l": {0, 0, 'l'},
-	"m": {0, 0, 'm'},
-	"n": {0, 0, 'n'},
-	"o": {0, 0, 'o'},
-	"p": {0, 0, 'p'},
-	"q": {0, 0, 'q'},
-	"r": {0, 0, 'r'},
-	"s": {0, 0, 's'},
-	"t": {0, 0, 't'},
-	"u": {0, 0, 'u'},
-	"v": {0, 0, 'v'},
-	"w": {0, 0, 'w'},
-	"x": {0, 0, 'x'},
-	"y": {0, 0, 'y'},
-	"z": {0, 0, 'z'},
-	">": {0, 0, '>'},
-	"}": {0, 0, '}'},
-	"{": {0, 0, '{'},
+	"a": {tcell.ModNone, tcell.KeyRune, 'a'},
+	"b": {tcell.ModNone, tcell.KeyRune, 'b'},
+	"c": {tcell.ModNone, tcell.KeyRune, 'c'},
+	"d": {tcell.ModNone, tcell.KeyRune, 'd'},
+	"e": {tcell.ModNone, tcell.KeyRune, 'e'},
+	"f": {tcell.ModNone, tcell.KeyRune, 'f'},
+	"g": {tcell.ModNone, tcell.KeyRune, 'g'},
+	"h": {tcell.ModNone, tcell.KeyRune, 'h'},
+	"i": {tcell.ModNone, tcell.KeyRune, 'i'},
+	"j": {tcell.ModNone, tcell.KeyRune, 'j'},
+	"k": {tcell.ModNone, tcell.KeyRune, 'k'},
+	"l": {tcell.ModNone, tcell.KeyRune, 'l'},
+	"m": {tcell.ModNone, tcell.KeyRune, 'm'},
+	"n": {tcell.ModNone, tcell.KeyRune, 'n'},
+	"o": {tcell.ModNone, tcell.KeyRune, 'o'},
+	"p": {tcell.ModNone, tcell.KeyRune, 'p'},
+	"q": {tcell.ModNone, tcell.KeyRune, 'q'},
+	"r": {tcell.ModNone, tcell.KeyRune, 'r'},
+	"s": {tcell.ModNone, tcell.KeyRune, 's'},
+	"t": {tcell.ModNone, tcell.KeyRune, 't'},
+	"u": {tcell.ModNone, tcell.KeyRune, 'u'},
+	"v": {tcell.ModNone, tcell.KeyRune, 'v'},
+	"w": {tcell.ModNone, tcell.KeyRune, 'w'},
+	"x": {tcell.ModNone, tcell.KeyRune, 'x'},
+	"y": {tcell.ModNone, tcell.KeyRune, 'y'},
+	"z": {tcell.ModNone, tcell.KeyRune, 'z'},
+	">": {tcell.ModNone, tcell.KeyRune, '>'},
+	"}": {tcell.ModNone, tcell.KeyRune, '}'},
+	"{": {tcell.ModNone, tcell.KeyRune, '{'},
 }

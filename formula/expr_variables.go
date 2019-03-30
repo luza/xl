@@ -55,7 +55,19 @@ func (e *Unary) Variables() []*Variable {
 func (e *Primary) Variables() []*Variable {
 	if e.Variable != nil {
 		return []*Variable{e.Variable}
+	} else if e.SubExpression != nil {
+		return e.SubExpression.Variables()
+	} else if e.Func != nil {
+		return e.Func.Variables()
 	} else {
 		return nil
 	}
+}
+
+func (e *Func) Variables() []*Variable {
+	var vars []*Variable
+	for _, a := range e.Arguments {
+		vars = append(vars, a.Variables()...)
+	}
+	return vars
 }

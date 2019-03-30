@@ -22,6 +22,7 @@ func TestParse(t *testing.T) {
 		{`=2+2*2`, "6", 0},
 		{`=1+1*1+1`, "3", 0},
 		{`=2^3`, "8", 0},
+		{`=2^3^2`, "64", 0},
 		{`=2^-2`, "0.25", 0},
 		{`="string"`, "string", 0},
 		{`="ap""""ple"`, `ap""ple`, 0},
@@ -44,6 +45,7 @@ func TestParse(t *testing.T) {
 		{`=SUM(1; 2; 3)`, "6", 0},
 		{`=A1`, "4", 1},
 		{`=-A1`, "-4", 1},
+		{`=(A1+20)*3`, "72", 1},
 		{`=A1+A1`, "10", 2},
 		{`=$A1+A$1+$A$1`, "12", 3},
 		{`=Sheet!A1+Sheet2!A1`, "10", 2},
@@ -55,8 +57,8 @@ func TestParse(t *testing.T) {
 	}
 	for _, c := range testCases {
 		f, x, err := Parse(c.f)
-		vars := x.Variables()
 		assert.NoErrorf(t, err, "case %s: must not fail on parse %s", c.f, err)
+		vars := x.Variables()
 		assert.Lenf(t, vars, c.varsNum, "case %s: must return %d variables (returned %d)", c.f, c.varsNum, len(vars))
 		var dp eval.RefRegistryInterface
 		ec := eval.NewContext(dp)

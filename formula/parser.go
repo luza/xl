@@ -84,9 +84,9 @@ type Multiplication struct {
 }
 
 type Power struct {
-	Unary *Unary          `@@`
-	Op    string          `[ @( "^" )`
-	Next  *Multiplication `  @@ ]`
+	Unary *Unary `@@`
+	Op    string `[ @( "^" )`
+	Next  *Power `  @@ ]`
 }
 
 type Unary struct {
@@ -237,7 +237,7 @@ func buildFuncFromPower(p *Power) (Function, int) {
 		return buildFuncFromUnary(p.Unary)
 	}
 	subFunc1, consumedArgs1 := buildFuncFromUnary(p.Unary)
-	subFunc2, consumedArgs2 := buildFuncFromMultiplication(p.Next)
+	subFunc2, consumedArgs2 := buildFuncFromPower(p.Next)
 	f := func(ec *eval.Context, args []eval.Value) (eval.Value, error) {
 		var v1, v2 eval.Value
 		var err error

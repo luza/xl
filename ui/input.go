@@ -1,7 +1,7 @@
 package ui
 
 import (
-	"github.com/gdamore/tcell/termbox"
+	"github.com/gdamore/tcell"
 )
 
 type InputInterface interface {
@@ -14,7 +14,7 @@ type InputEventInterface interface {
 type KeyEvent struct {
 	InputEventInterface
 
-	Mod termbox.Modifier // one of Mod* constants or 0
-	Key termbox.Key      // one of Key* constants, invalid if 'Ch' is not 0
-	Ch  rune             // a unicode character
+	Mod tcell.ModMask
+	Key tcell.Key
+	Ch  rune
 }

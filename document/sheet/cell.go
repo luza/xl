@@ -70,7 +70,9 @@ func (c *Cell) Expression(ec *eval.Context) *formula.Expression {
 	if c.valueType != CellValueTypeFormula {
 		return nil
 	}
-	updateVars(ec, c.expression, c.refs)
+	if err := updateVars(ec, c.expression, c.refs); err != nil {
+		return nil
+	}
 	return c.expression
 }
 

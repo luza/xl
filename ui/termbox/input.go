@@ -5,6 +5,7 @@ import (
 
 	"errors"
 
+	"github.com/gdamore/tcell"
 	"github.com/gdamore/tcell/termbox"
 )
 
@@ -13,8 +14,8 @@ func (t *Termbox) ReadKey() (ui.InputEventInterface, error) {
 	event := termbox.PollEvent()
 	if event.Type == termbox.EventKey {
 		e := ui.KeyEvent{
-			Mod: event.Mod,
-			Key: event.Key,
+			Mod: tcell.ModMask(event.Mod),
+			Key: tcell.Key(event.Key),
 			Ch:  event.Ch,
 		}
 		return e, nil

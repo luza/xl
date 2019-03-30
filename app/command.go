@@ -25,7 +25,7 @@ func (a *App) processCommand(c string) bool {
 		a.cmdResizeColumn(1)
 	case "narrower":
 		a.cmdResizeColumn(-1)
-	case "appendSheet":
+	case "newSheet":
 		a.cmdNewSheet(arg1(args))
 	case "nextSheet":
 		a.cmdNextSheet()
