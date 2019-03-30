@@ -1,9 +1,9 @@
 package formula
 
 import (
-	"testing"
+	"xl/document/eval"
 
-	"xl/document/value"
+	"testing"
 
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
@@ -58,12 +58,12 @@ func TestParse(t *testing.T) {
 		vars := x.Variables()
 		assert.NoErrorf(t, err, "case %s: must not fail on parse %s", c.f, err)
 		assert.Lenf(t, vars, c.varsNum, "case %s: must return %d variables (returned %d)", c.f, c.varsNum, len(vars))
-		var lr value.LinkRegistryInterface
-		ec := value.NewEvalContext(lr)
-		v, err := f(ec, []value.Value{
-			value.NewDecimalValue(decimal.NewFromFloat(4)),
-			value.NewDecimalValue(decimal.NewFromFloat(6)),
-			value.NewDecimalValue(decimal.NewFromFloat(2)),
+		var dp eval.RefRegistryInterface
+		ec := eval.NewContext(dp)
+		v, err := f(ec, []eval.Value{
+			eval.NewDecimalValue(decimal.NewFromFloat(4)),
+			eval.NewDecimalValue(decimal.NewFromFloat(6)),
+			eval.NewDecimalValue(decimal.NewFromFloat(2)),
 		})
 		assert.NoErrorf(t, err, "case %s: function must not fail, got %s", c.f, err)
 		s, _ := v.StringValue(ec)
@@ -98,11 +98,11 @@ func TestExecuteErrors(t *testing.T) {
 	for _, c := range testCases {
 		f, _, err := Parse(c.f)
 		assert.NoErrorf(t, err, "case %s: must not fail on parse %s", c.f, err)
-		var lr value.LinkRegistryInterface
-		ec := value.NewEvalContext(lr)
-		_, err = f(ec, []value.Value{
-			value.NewDecimalValue(decimal.NewFromFloat(4)),
-			value.NewDecimalValue(decimal.NewFromFloat(6)),
+		var dp eval.RefRegistryInterface
+		ec := eval.NewContext(dp)
+		_, err = f(ec, []eval.Value{
+			eval.NewDecimalValue(decimal.NewFromFloat(4)),
+			eval.NewDecimalValue(decimal.NewFromFloat(6)),
 		})
 		assert.Errorf(t, err, "case %s: execution must fail", c.f)
 		assert.Equalf(t, c.err, err.Error(), "case %s: must fail with reason '%s', actual '%s'", c.f, c.err, err.Error())

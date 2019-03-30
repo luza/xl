@@ -110,7 +110,7 @@ func (s *Sheet) AddStaticSegment(x, y, width, height int, cells [][]Cell) Segmen
 	return segment
 }
 
-// Cell returns the cell for given X and Y.
+// cell returns the cell for given X and Y.
 func (s *Sheet) Cell(x, y int) *Cell {
 	for _, segment := range s.Segments {
 		if segment.Contains(x, y) {

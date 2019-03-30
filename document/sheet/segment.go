@@ -3,7 +3,7 @@ package sheet
 type Segment interface {
 	Contains(x, y int) bool
 	ContainsX(x int) bool
-	ContainsY(x int) bool
+	ContainsY(y int) bool
 	Cell(x, y int) *Cell
 	SetCell(x, y int, cell *Cell)
 	Size() Rect

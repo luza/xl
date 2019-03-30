@@ -3,14 +3,14 @@ package formula
 import (
 	"strings"
 
-	"xl/document/value"
+	"xl/document/eval"
 
 	"github.com/shopspring/decimal"
 )
 
 const maxArguments = 1000
 
-type Function func(*value.EvalContext, []value.Value) (value.Value, error)
+type Function func(*eval.Context, []eval.Value) (eval.Value, error)
 
 type functionDef struct {
 	F       Function
@@ -500,31 +500,31 @@ var functions = map[string]functionDef{
 	// ZTEST [Compatibility] Returns the one-tailed probability-value of a z-test
 }
 
-func trim(ec *value.EvalContext, args []value.Value) (value.Value, error) {
+func trim(ec *eval.Context, args []eval.Value) (eval.Value, error) {
 	s, err := args[0].StringValue(ec)
 	if err != nil {
-		return value.Value{}, err
+		return eval.NullValue(), err
 	}
-	return value.NewStringValue(strings.Trim(s, "\n\r\t ")), nil
+	return eval.NewStringValue(strings.Trim(s, "\n\r\t ")), nil
 }
 
-func sum(ec *value.EvalContext, args []value.Value) (value.Value, error) {
+func sum(ec *eval.Context, args []eval.Value) (eval.Value, error) {
 	s := decimal.Zero
 	for i := range args {
 		d, err := args[i].DecimalValue(ec)
 		if err != nil {
-			return value.Value{}, err
+			return eval.NullValue(), err
 		}
 		s = s.Add(d)
 	}
-	return value.NewDecimalValue(s), nil
+	return eval.NewDecimalValue(s), nil
 }
 
 // IF [Logical] Specifies a logical test to perform
-func if_(ec *value.EvalContext, args []value.Value) (value.Value, error) {
+func if_(ec *eval.Context, args []eval.Value) (eval.Value, error) {
 	b, err := args[0].BoolValue(ec)
 	if err != nil {
-		return value.Value{}, err
+		return eval.NullValue(), err
 	}
 	if b {
 		return args[1], nil

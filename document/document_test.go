@@ -24,9 +24,31 @@ func TestCellNameToXY(t *testing.T) {
 		{`AAAA1`, 18278, 0},
 	}
 	for _, c := range testCases {
-		x, y, err := cellNameToXY(c.name)
+		x, y, err := CellAxis(c.name)
 		assert.NoErrorf(t, err, "case %s: must not fail on parse %s", c.name, err)
 		assert.Equalf(t, c.x, x, "case %s: must be true X: %d==%d", c.name, c.x, x)
 		assert.Equalf(t, c.y, y, "case %s: must be true Y: %d==%d", c.name, c.y, y)
+	}
+}
+
+func TestColName(t *testing.T) {
+	testCases := []struct {
+		n    int
+		name string
+	}{
+		{0, "A"},
+		{25, "Z"},
+		{26, "AA"},
+		{51, "AZ"},
+		{52, "BA"},
+		{700, "ZY"},
+		{701, "ZZ"},
+		{702, "AAA"},
+		{18277, "ZZZ"},
+		{18278, "AAAA"},
+	}
+	for _, c := range testCases {
+		name := ColName(c.n)
+		assert.Equalf(t, c.name, name, "case %d: must be equal", c.n)
 	}
 }

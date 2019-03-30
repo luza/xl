@@ -2,8 +2,8 @@ package bufcsv
 
 import (
 	"xl/document"
+	"xl/document/eval"
 	"xl/document/sheet"
-	"xl/document/value"
 	"xl/fs"
 
 	"encoding/csv"
@@ -120,7 +120,7 @@ func (b *BufCSV) Write(doc *document.Document) error {
 			size := segment.Size()
 			// copy cells from found segment into row
 			for x <= size.MaxX() {
-				row[x], _ = segment.Cell(x, y).StringValue(value.NewEvalContext(doc))
+				row[x], _ = segment.Cell(x, y).StringValue(eval.NewContext(doc))
 				x++
 			}
 		}

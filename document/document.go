@@ -1,13 +1,14 @@
 package document
 
 import (
+	"xl/document/eval"
+	"xl/document/sheet"
+
+	"bytes"
 	"fmt"
 	"regexp"
 	"strconv"
 	"strings"
-
-	"xl/document/sheet"
-	"xl/document/value"
 )
 
 const (
@@ -21,15 +22,15 @@ type Document struct {
 
 	maxSheetIdx int
 
-	value.LinkRegistryInterface
-	linksRegistry map[int]map[int]map[int]*value.Link
+	eval.RefRegistryInterface
+	refRegistry eval.RefRegistry
 }
 
 var cellNamePattern = regexp.MustCompile(`^\$?([A-Z]+)\$?([0-9]+)$`)
 
 func New() *Document {
 	return &Document{
-		linksRegistry: make(map[int]map[int]map[int]*value.Link),
+		refRegistry: make(eval.RefRegistry),
 	}
 }
 
@@ -40,7 +41,7 @@ func NewWithEmptySheet() *Document {
 		CurrentSheet:  s,
 		CurrentSheetN: 0,
 		maxSheetIdx:   1,
-		linksRegistry: make(map[int]map[int]map[int]*value.Link),
+		refRegistry:   make(eval.RefRegistry),
 	}
 }
 
@@ -48,15 +49,15 @@ func NewWithEmptySheet() *Document {
 func (d *Document) NewSheet(title string) (*sheet.Sheet, error) {
 	if title != "" {
 		if len(title) > maxSheetTitleLength {
-			return nil, value.NewError(value.ErrorKindName, "sheet title must be up to 31 characters long")
+			return nil, eval.NewError(eval.ErrorKindName, "sheet title must be up to 31 characters long")
 		}
 		if strings.ContainsAny(title, ":\\/?*[]") {
-			return nil, value.NewError(value.ErrorKindName, "sheet title can not include : \\ / ? * [ ]")
+			return nil, eval.NewError(eval.ErrorKindName, "sheet title can not include : \\ / ? * [ ]")
 		}
 		// ensure title is unique
 		for _, s := range d.Sheets {
 			if s.Title == title {
-				return nil, value.NewError(value.ErrorKindName, "duplicating sheet title")
+				return nil, eval.NewError(eval.ErrorKindName, "duplicating sheet title")
 			}
 		}
 	} else {
@@ -97,7 +98,7 @@ func (d *Document) DeleteCol() {
 // FindCell finds position of the cell with given name.
 func (d *Document) FindCell(cellName string) (int, int, error) {
 	// TODO: accept sheet name in request
-	return cellNameToXY(cellName)
+	return CellAxis(cellName)
 }
 
 // sheetByIdx returns sheet by its index.
@@ -110,11 +111,11 @@ func (d *Document) sheetByIdx(idx int) *sheet.Sheet {
 	return nil
 }
 
-// cellNameToXY transforms cell name into X, Y coordinates.
-func cellNameToXY(name string) (int, int, error) {
+// CellAxis transforms cell name into X, Y coordinates.
+func CellAxis(name string) (int, int, error) {
 	res := cellNamePattern.FindStringSubmatch(name)
 	if len(res) < 3 {
-		return 0, 0, value.NewError(value.ErrorKindName, "malformed cell name")
+		return 0, 0, eval.NewError(eval.ErrorKindName, "malformed cell name")
 	}
 	col, row := res[1], res[2]
 	x, p := 0, 1
@@ -124,7 +125,35 @@ func cellNameToXY(name string) (int, int, error) {
 	}
 	y, _ := strconv.Atoi(row)
 	if x < 1 || y < 1 {
-		return 0, 0, value.NewError(value.ErrorKindName, "malformed cell name")
+		return 0, 0, eval.NewError(eval.ErrorKindName, "malformed cell name")
 	}
 	return x - 1, y - 1, nil
+}
+
+// CellName returns name for cell under given X and Y.
+func CellName(x, y int) string {
+	return ColName(x) + RowName(y)
+}
+
+// RowName returns name of row for given index.
+func RowName(n int) string {
+	return strconv.Itoa(n + 1)
+}
+
+// ColName returns name of column for given index.
+func ColName(n int) string {
+	alphabet := "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	var result bytes.Buffer
+	result.WriteByte(alphabet[n%26])
+	n /= 26
+	for n > 0 {
+		result.WriteByte(alphabet[(n-1)%26])
+		n = (n - 1) / 26
+	}
+	// reverse bytes
+	b := result.Bytes()
+	for i, j := 0, len(b)-1; i < j; i, j = i+1, j-1 {
+		b[i], b[j] = b[j], b[i]
+	}
+	return string(b)
 }

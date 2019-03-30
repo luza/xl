@@ -3,9 +3,8 @@ package sheet
 import (
 	"strconv"
 
-	"xl/document/value"
+	"xl/document/eval"
 	"xl/formula"
-	"xl/log"
 
 	"github.com/shopspring/decimal"
 )
@@ -32,7 +31,7 @@ type Cell struct {
 
 	// formula params
 	expression *formula.Expression
-	args       []value.Value
+	refs       []eval.Value
 }
 
 func NewCellEmpty() *Cell {
@@ -62,7 +61,7 @@ func (c *Cell) RawValue() string {
 	return c.rawValue
 }
 
-func (c *Cell) Expression(ec *value.EvalContext) *formula.Expression {
+func (c *Cell) Expression(ec *eval.Context) *formula.Expression {
 	if c.valueType == CellValueUntyped {
 		if err := c.evaluateType(ec); err != nil {
 			return nil
@@ -71,14 +70,11 @@ func (c *Cell) Expression(ec *value.EvalContext) *formula.Expression {
 	if c.valueType != CellValueTypeFormula {
 		return nil
 	}
-	// actualize variables from links
-	//for i, v := range c.expression.Variables() {
-	//	updateVarFromLink(v, c.args[i])
-	//}
+	updateVars(ec, c.expression, c.refs)
 	return c.expression
 }
 
-func (c *Cell) BoolValue(ec *value.EvalContext) (bool, error) {
+func (c *Cell) BoolValue(ec *eval.Context) (bool, error) {
 	if c.valueType == CellValueUntyped {
 		if err := c.evaluateType(ec); err != nil {
 			return false, err
@@ -88,7 +84,7 @@ func (c *Cell) BoolValue(ec *value.EvalContext) (bool, error) {
 	case CellValueTypeEmpty:
 		return false, nil
 	case CellValueTypeText:
-		return false, value.NewError(value.ErrorKindCasting, "unable to cast text to bool")
+		return false, eval.NewError(eval.ErrorKindCasting, "unable to cast text to bool")
 	case CellValueTypeInteger:
 		return c.intValue != 0, nil
 	case CellValueTypeDecimal:
@@ -96,7 +92,7 @@ func (c *Cell) BoolValue(ec *value.EvalContext) (bool, error) {
 	case CellValueTypeBool:
 		return c.boolValue, nil
 	case CellValueTypeFormula:
-		val, err := c.formulaValue(ec, c.args)
+		val, err := c.formulaValue(ec, c.refs)
 		if err != nil {
 			return false, err
 		}
@@ -106,7 +102,7 @@ func (c *Cell) BoolValue(ec *value.EvalContext) (bool, error) {
 }
 
 // DecimalValue returns evaluated cell value as decimal.
-func (c *Cell) DecimalValue(ec *value.EvalContext) (decimal.Decimal, error) {
+func (c *Cell) DecimalValue(ec *eval.Context) (decimal.Decimal, error) {
 	if c.valueType == CellValueUntyped {
 		if err := c.evaluateType(ec); err != nil {
 			return decimal.Zero, err
@@ -116,15 +112,15 @@ func (c *Cell) DecimalValue(ec *value.EvalContext) (decimal.Decimal, error) {
 	case CellValueTypeEmpty:
 		return decimal.Zero, nil
 	case CellValueTypeText:
-		return decimal.Zero, value.NewError(value.ErrorKindCasting, "unable to cast text to decimal")
+		return decimal.Zero, eval.NewError(eval.ErrorKindCasting, "unable to cast text to decimal")
 	case CellValueTypeInteger:
 		return decimal.New(int64(c.intValue), 0), nil
 	case CellValueTypeDecimal:
 		return *c.decimalValue, nil
 	case CellValueTypeBool:
-		return decimal.Zero, value.NewError(value.ErrorKindCasting, "unable to cast bool to decimal")
+		return decimal.Zero, eval.NewError(eval.ErrorKindCasting, "unable to cast bool to decimal")
 	case CellValueTypeFormula:
-		val, err := c.formulaValue(ec, c.args)
+		val, err := c.formulaValue(ec, c.refs)
 		if err != nil {
 			return decimal.Zero, err
 		}
@@ -134,14 +130,14 @@ func (c *Cell) DecimalValue(ec *value.EvalContext) (decimal.Decimal, error) {
 }
 
 // StringValue returns evaluated cell rawValue as string.
-func (c *Cell) StringValue(ec *value.EvalContext) (string, error) {
+func (c *Cell) StringValue(ec *eval.Context) (string, error) {
 	if c.valueType == CellValueUntyped {
 		if err := c.evaluateType(ec); err != nil {
 			return "", err
 		}
 	}
 	if c.valueType == CellValueTypeFormula {
-		val, err := c.formulaValue(ec, c.args)
+		val, err := c.formulaValue(ec, c.refs)
 		if err != nil {
 			return "", err
 		}
@@ -150,25 +146,25 @@ func (c *Cell) StringValue(ec *value.EvalContext) (string, error) {
 	return c.rawValue, nil
 }
 
-func (c *Cell) Value(ec *value.EvalContext) (value.Value, error) {
+func (c *Cell) Value(ec *eval.Context) (eval.Value, error) {
 	if c.valueType == CellValueUntyped {
 		if err := c.evaluateType(ec); err != nil {
-			return value.Value{}, err
+			return eval.NullValue(), err
 		}
 	}
 	switch c.valueType {
 	case CellValueTypeEmpty:
-		return value.NewStringValue(""), nil
+		return eval.NewStringValue(""), nil
 	case CellValueTypeText:
-		return value.NewStringValue(c.rawValue), nil
+		return eval.NewStringValue(c.rawValue), nil
 	case CellValueTypeInteger:
-		return value.NewDecimalValue(decimal.New(int64(c.intValue), 0)), nil
+		return eval.NewDecimalValue(decimal.New(int64(c.intValue), 0)), nil
 	case CellValueTypeDecimal:
-		return value.NewDecimalValue(*c.decimalValue), nil
+		return eval.NewDecimalValue(*c.decimalValue), nil
 	case CellValueTypeBool:
-		return value.NewBoolValue(c.boolValue), nil
+		return eval.NewBoolValue(c.boolValue), nil
 	case CellValueTypeFormula:
-		return c.formulaValue(ec, c.args)
+		return c.formulaValue(ec, c.refs)
 	}
 	panic("unsupported type")
 }
@@ -181,7 +177,7 @@ func (c *Cell) SetValueUntyped(v string) {
 	c.rawValue = v
 }
 
-func (c *Cell) evaluateType(ec *value.EvalContext) error {
+func (c *Cell) evaluateType(ec *eval.Context) error {
 	t, castedV := guessCellType(c.rawValue)
 	switch t {
 	case CellValueTypeInteger:
@@ -193,7 +189,7 @@ func (c *Cell) evaluateType(ec *value.EvalContext) error {
 		c.boolValue = castedV.(bool)
 	case CellValueTypeFormula:
 		c.formulaValue = nil
-		c.args = nil
+		c.refs = nil
 		f, expr, err := formula.Parse(c.rawValue)
 		if err != nil {
 			return err
@@ -201,7 +197,7 @@ func (c *Cell) evaluateType(ec *value.EvalContext) error {
 		c.formulaValue = f
 		c.expression = expr
 		c.rawValue = expr.String() // need this?
-		c.args, err = makeLinks(expr.Variables(), ec)
+		c.refs, err = makeRefs(expr.Variables(), ec)
 		if err != nil {
 			return err
 		}
@@ -231,34 +227,47 @@ func guessCellType(v string) (int, interface{}) {
 	return CellValueTypeText, v
 }
 
-func makeLinks(vars []*formula.Variable, ec *value.EvalContext) ([]value.Value, error) {
-	values := make([]value.Value, len(vars))
+func makeRefs(vars []*formula.Variable, ec *eval.Context) ([]eval.Value, error) {
+	values := make([]eval.Value, len(vars))
 	for i := range vars {
-		log.L.Error("converting var to link")
 		if vars[i].CellTo != nil {
 			// range
-			//links[i] = dd.LinkRange(c.Cell, c.CellTo, c.Sheet)
-			//values[i] = value.NewLinkValue(l)
+			//links[i] = dd.LinkRange(c.cell, c.CellTo, c.Sheet)
+			//values[i] = eval.NewLinkValue(l)
 		} else {
 			c := vars[i].Cell
 			var s string
 			if c.Sheet != nil {
 				s = string(*c.Sheet)
 			}
-			l, err := ec.LinkRegistry.MakeLink(c.Cell, s)
+			ref, err := ec.DataProvider.NewCellRef(s, c.Cell)
 			if err != nil {
 				return nil, err
 			}
-			values[i] = value.NewLinkValue(l)
+			values[i] = ref
 		}
 	}
 	return values, nil
 }
 
-//func updateVarFromLink(v *formula.Variable, val value.Value) error {
-//	l, err := val.Link()
-//	if err != nil {
-//		return err
-//	}
-//	l.
-//}
+func updateVars(ec *eval.Context, x *formula.Expression, refs []eval.Value) error {
+	for i, v := range x.Variables() {
+		switch r := refs[i].(type) {
+		case *eval.CellRef:
+			sheetTitle, err := ec.DataProvider.SheetTitle(r)
+			if err != nil {
+				return err
+			}
+			s := formula.Sheet(sheetTitle)
+			v.Cell.Sheet = &s
+			cellName, err := ec.DataProvider.CellName(r)
+			if err != nil {
+				return err
+			}
+			v.Cell.Cell = cellName
+		default:
+			panic("unexpected value type")
+		}
+	}
+	return nil
+}
