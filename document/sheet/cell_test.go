@@ -19,6 +19,7 @@ func TestGuessCellType(t *testing.T) {
 		{`1`, CellValueTypeInteger, 1},
 		{`0.1`, CellValueTypeDecimal, nil},
 		{`1.0`, CellValueTypeDecimal, nil},
+		{`1.0e10`, CellValueTypeDecimal, nil},
 		{`=FUNC()`, CellValueTypeFormula, nil},
 		{`=`, CellValueTypeText, "="},
 		{`abc`, CellValueTypeText, "abc"},

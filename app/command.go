@@ -1,13 +1,13 @@
 package app
 
 import (
+	"xl/document/sheet"
+	"xl/ui"
+
 	"fmt"
 	"os"
 	"runtime/pprof"
 	"strings"
-
-	"xl/document/sheet"
-	"xl/ui"
 )
 
 const colSizeIncrementStep = 6

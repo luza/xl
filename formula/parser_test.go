@@ -56,10 +56,11 @@ func TestParse(t *testing.T) {
 		{`='Sheet With Spaces'!A1:'Sheet With Spaces'!B200+Sheet2!A1:Sheet2!C300`, "10", 2},
 	}
 	for _, c := range testCases {
-		f, x, err := Parse(c.f)
+		expr, err := Parse(c.f)
 		assert.NoErrorf(t, err, "case %s: must not fail on parse %s", c.f, err)
-		vars := x.Variables()
+		vars := expr.Variables()
 		assert.Lenf(t, vars, c.varsNum, "case %s: must return %d variables (returned %d)", c.f, c.varsNum, len(vars))
+		f, _ := expr.BuildFunc()
 		var dp eval.RefRegistryInterface
 		ec := eval.NewContext(dp)
 		v, err := f(ec, []eval.Value{
@@ -83,7 +84,7 @@ func TestParseErrors(t *testing.T) {
 		{`=1+`, `<source>:1:3: unexpected token "+"`},
 	}
 	for _, c := range testCases {
-		_, _, err := Parse(c.f)
+		_, err := Parse(c.f)
 		assert.Errorf(t, err, "case %s: must fail", c.f)
 		assert.Equalf(t, c.err, err.Error(), "case %s: must fail with reason '%s', actual '%s'", c.f, c.err, err.Error())
 	}
@@ -98,8 +99,9 @@ func TestExecuteErrors(t *testing.T) {
 		{`=1/0`, `division by zero`},
 	}
 	for _, c := range testCases {
-		f, _, err := Parse(c.f)
+		expr, err := Parse(c.f)
 		assert.NoErrorf(t, err, "case %s: must not fail on parse %s", c.f, err)
+		f, _ := expr.BuildFunc()
 		var dp eval.RefRegistryInterface
 		ec := eval.NewContext(dp)
 		_, err = f(ec, []eval.Value{

@@ -192,11 +192,11 @@ func (c *Cell) evaluateType(ec *eval.Context) error {
 	case CellValueTypeFormula:
 		c.formulaValue = nil
 		c.refs = nil
-		f, expr, err := formula.Parse(c.rawValue)
+		expr, err := formula.Parse(c.rawValue)
 		if err != nil {
 			return err
 		}
-		c.formulaValue = f
+		c.formulaValue, _ = expr.BuildFunc()
 		c.expression = expr
 		c.rawValue = expr.String() // need this?
 		c.refs, err = makeRefs(expr.Variables(), ec)
