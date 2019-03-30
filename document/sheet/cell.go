@@ -216,14 +216,14 @@ func guessCellType(v string) (int, interface{}) {
 	} else if v[0] == '=' && len(v) > 1 {
 		return CellValueTypeFormula, nil
 	} else {
-		if b, err := strconv.ParseBool(v); err == nil {
-			return CellValueTypeBool, b
+		if i, err := strconv.ParseInt(v, 10, 64); err == nil {
+			return CellValueTypeInteger, int(i)
 		}
 		if _, err := strconv.ParseFloat(v, 64); err == nil {
 			return CellValueTypeDecimal, nil
 		}
-		if i, err := strconv.ParseInt(v, 10, 64); err == nil {
-			return CellValueTypeInteger, i
+		if b, err := strconv.ParseBool(v); err == nil {
+			return CellValueTypeBool, b
 		}
 	}
 	return CellValueTypeText, v
