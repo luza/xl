@@ -2,26 +2,31 @@ package eval
 
 type Context struct {
 	DataProvider RefRegistryInterface
-	visitedCells map[*CellRef]bool
+	visitedCells []*CellRef
 }
 
 func NewContext(dp RefRegistryInterface) *Context {
 	ec := &Context{
 		DataProvider: dp,
 	}
-	ec.Reset()
 	return ec
 }
 
-func (ec *Context) Reset() {
-	ec.visitedCells = make(map[*CellRef]bool)
+func (ec *Context) AddVisited(r *CellRef) int {
+	oldLen := len(ec.visitedCells)
+	ec.visitedCells = append(ec.visitedCells, r)
+	return oldLen
 }
 
-func (ec *Context) AddVisited(r *CellRef) {
-	ec.visitedCells[r] = true
+func (ec *Context) ResetVisited(i int) {
+	ec.visitedCells = ec.visitedCells[:i]
 }
 
 func (ec *Context) Visited(r *CellRef) bool {
-	_, ok := ec.visitedCells[r]
-	return ok
+	for i := range ec.visitedCells {
+		if ec.visitedCells[i] == r {
+			return true
+		}
+	}
+	return false
 }

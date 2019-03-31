@@ -1,9 +1,14 @@
 package document
 
 import (
+	"xl/document/eval"
+	"xl/document/sheet"
+	"xl/log"
+
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/zap"
 )
 
 func TestCellNameToXY(t *testing.T) {
@@ -51,4 +56,38 @@ func TestColName(t *testing.T) {
 		name := ColName(c.n)
 		assert.Equalf(t, c.name, name, "case %d: must be equal", c.n)
 	}
+}
+
+func TestCellStringValue(t *testing.T) {
+	log.L = zap.NewNop()
+
+	d := NewWithEmptySheet()
+
+	d.CurrentSheet.SetCell(0, 0, sheet.NewCellUntyped("1"))
+	d.CurrentSheet.SetCell(0, 1, sheet.NewCellUntyped("=A1+1"))
+	d.CurrentSheet.SetCell(0, 2, sheet.NewCellUntyped("=A3"))
+	d.CurrentSheet.SetCell(0, 3, sheet.NewCellUntyped("=A4+1"))
+	d.CurrentSheet.SetCell(0, 4, sheet.NewCellUntyped("=A1+A1")) // 2
+	d.CurrentSheet.SetCell(0, 5, sheet.NewCellUntyped("=1+A6"))
+
+	v, err := d.CurrentSheet.Cell(0, 0).StringValue(eval.NewContext(d))
+	assert.NoError(t, err)
+	assert.Equal(t, "1", v)
+
+	v, err = d.CurrentSheet.Cell(0, 1).StringValue(eval.NewContext(d))
+	assert.NoError(t, err)
+	assert.Equal(t, "2", v)
+
+	_, err = d.CurrentSheet.Cell(0, 2).StringValue(eval.NewContext(d))
+	assert.EqualError(t, err, "circular reference")
+
+	_, err = d.CurrentSheet.Cell(0, 3).StringValue(eval.NewContext(d))
+	assert.EqualError(t, err, "circular reference")
+
+	v, err = d.CurrentSheet.Cell(0, 4).StringValue(eval.NewContext(d))
+	//assert.NoError(t, err)
+	//assert.Equal(t, "2", v)
+
+	_, err = d.CurrentSheet.Cell(0, 5).StringValue(eval.NewContext(d))
+	assert.EqualError(t, err, "circular reference")
 }

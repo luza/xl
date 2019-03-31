@@ -31,20 +31,20 @@ func (d *Document) NewCellRef(sheetTitle, cellName string) (*eval.CellRef, error
 		return nil, err
 	}
 	// existing link?
-	if l, ok := d.refRegistry[s.Idx][x][y]; ok {
+	if r, ok := d.refRegistry[s.Idx][x][y]; ok {
 		log.L.Error(fmt.Sprintf("reused link sheet %d x %d y %d\n", s.Idx, x, y))
-		return l, nil
+		return r, nil
 	}
 	// not found? create new one
-	l := eval.NewCellRef(s.Idx, eval.Axis{X: x, Y: y})
+	r := eval.NewCellRef(s.Idx, eval.Axis{X: x, Y: y})
 	if _, ok := d.refRegistry[s.Idx]; !ok {
 		d.refRegistry[s.Idx] = make(map[int]map[int]*eval.CellRef)
 	}
 	if _, ok := d.refRegistry[s.Idx][x]; !ok {
 		d.refRegistry[s.Idx][x] = make(map[int]*eval.CellRef)
 	}
-	d.refRegistry[s.Idx][x][y] = l
-	return l, nil
+	d.refRegistry[s.Idx][x][y] = r
+	return r, nil
 }
 
 func (d *Document) SheetTitle(r *eval.CellRef) (string, error) {
