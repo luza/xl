@@ -84,9 +84,8 @@ type Multiplication struct {
 }
 
 type Power struct {
-	Unary *Unary `@@`
-	Op    string `[ @( "^" )`
-	Next  *Power `  @@ ]`
+	Base     *Unary   `@@`
+	Exponent []*Unary `{ "^" @@ }`
 }
 
 type Unary struct {
@@ -126,9 +125,9 @@ var lex = lexer.Must(lexer.Regexp(
 		`|(?P<Number>\d*\.?\d+([eE][-+]?\d+)?)` +
 		`|(?P<String>"([^"]|"")*")` +
 		`|(?P<Boolean>(?i)TRUE|FALSE)` +
-		`|(?P<FuncName>[A-z0-9]+)\(` +
-		`|(?P<Sheet>[A-z0-9_]+|'([^']|'')*')!` +
-		`|(?P<cell>\$?[A-z]+\$?[1-9][0-9]*)`,
+		`|(?P<FuncName>[A-Za-z][A-Za-z0-9\.]+)\(` +
+		`|(?P<Sheet>[A-Za-z0-9_]+|'([^']|'')*')!` +
+		`|(?P<cell>\$?[A-Za-z]+\$?[1-9][0-9]*)`,
 ))
 
 // Parse parses the formula, extracts variables from it and builds

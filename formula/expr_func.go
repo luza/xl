@@ -63,16 +63,19 @@ func (e *Multiplication) BuildFunc() (Function, int) {
 }
 
 func (e *Power) BuildFunc() (Function, int) {
-	if e.Next == nil {
-		return e.Unary.BuildFunc()
+	if len(e.Exponent) == 0 {
+		return e.Base.BuildFunc()
 	}
-	subFunc1, consumedArgs1 := e.Unary.BuildFunc()
-	subFunc2, consumedArgs2 := e.Next.BuildFunc()
-	return evalBinaryOperator(
-		e.Op,
-		subFunc1, consumedArgs1,
-		subFunc2, consumedArgs2,
-	)
+	subFunc1, consumedArgs1 := e.Base.BuildFunc()
+	for _, x := range e.Exponent {
+		subFunc2, consumedArgs2 := x.BuildFunc()
+		subFunc1, consumedArgs1 = evalBinaryOperator(
+			"^",
+			subFunc1, consumedArgs1,
+			subFunc2, consumedArgs2,
+		)
+	}
+	return subFunc1, consumedArgs1
 }
 
 func (e *Unary) BuildFunc() (Function, int) {
@@ -119,9 +122,9 @@ func (e *Primary) BuildFunc() (Function, int) {
 }
 
 func (e *Func) BuildFunc() (Function, int) {
-	consumedArgs := make([]int, len(e.Arguments))
-	subFunc := make([]Function, len(e.Arguments))
 	totalConsumedArgs := 0
+	subFunc := make([]Function, len(e.Arguments))
+	consumedArgs := make([]int, len(e.Arguments))
 	for i, a := range e.Arguments {
 		subFunc[i], consumedArgs[i] = a.BuildFunc()
 		totalConsumedArgs += consumedArgs[i]

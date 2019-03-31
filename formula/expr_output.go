@@ -56,10 +56,10 @@ func (e *Multiplication) Output(of OutputFunc) {
 }
 
 func (e *Power) Output(of OutputFunc) {
-	e.Unary.Output(of)
-	if e.Op != "" && e.Next != nil {
-		of(e.Op, OutputTypeOperator)
-		e.Next.Output(of)
+	e.Base.Output(of)
+	for _, x := range e.Exponent {
+		of("^", OutputTypeOperator)
+		x.Output(of)
 	}
 }
 

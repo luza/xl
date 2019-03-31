@@ -37,9 +37,9 @@ func (e *Multiplication) Variables() []*Variable {
 }
 
 func (e *Power) Variables() []*Variable {
-	vars := e.Unary.Variables()
-	if e.Next != nil {
-		vars = append(vars, e.Next.Variables()...)
+	vars := e.Base.Variables()
+	for _, x := range e.Exponent {
+		vars = append(vars, x.Variables()...)
 	}
 	return vars
 }
