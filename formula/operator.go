@@ -9,7 +9,7 @@ import (
 )
 
 func evalOperator(ec *eval.Context, op string, args ...eval.Value) (eval.Value, error) {
-	v := eval.NullValue()
+	v := eval.NewEmptyValue()
 	t, err := args[0].Type(ec)
 	if err != nil {
 		return v, err
@@ -26,7 +26,7 @@ func evalOperator(ec *eval.Context, op string, args ...eval.Value) (eval.Value, 
 		if v, err = evalBoolOperator(op, argsBool); err != nil {
 			return v, err
 		}
-	case eval.TypeDecimal:
+	case eval.TypeEmpty, eval.TypeDecimal:
 		argsDecimal := make([]decimal.Decimal, len(args))
 		for i := range args {
 			if argsDecimal[i], err = args[i].DecimalValue(ec); err != nil {
@@ -177,7 +177,7 @@ func evalDecimalOperator(op string, args []decimal.Decimal) (eval.Value, error) 
 		return eval.NewDecimalValue(args[0].Mul(args[1])), nil
 	case "/":
 		if args[1].Equal(decimal.Zero) {
-			return eval.NullValue(), eval.NewError(eval.ErrorKindDiv0, "division by zero")
+			return eval.NewEmptyValue(), eval.NewError(eval.ErrorKindDiv0, "division by zero")
 		}
 		return eval.NewDecimalValue(args[0].Div(args[1])), nil
 	case "^":
@@ -190,7 +190,7 @@ func evalDecimalOperator(op string, args []decimal.Decimal) (eval.Value, error) 
 func evalStringOperator(op string, args []string) (eval.Value, error) {
 	if len(args) == 1 {
 		// unary neg
-		return eval.NullValue(), eval.NewError(eval.ErrorKindFormula, "arithmetic (%s) on string operand", op)
+		return eval.NewEmptyValue(), eval.NewError(eval.ErrorKindFormula, "arithmetic (%s) on string operand", op)
 	}
 	res := strings.Compare(args[0], args[1])
 	switch op {
@@ -207,7 +207,7 @@ func evalStringOperator(op string, args []string) (eval.Value, error) {
 	case ">=":
 		return eval.NewBoolValue(res >= 0), nil
 	case "+", "-", "*", "/", "^":
-		return eval.NullValue(), eval.NewError(eval.ErrorKindFormula, "arithmetic (%s) on string operand", op)
+		return eval.NewEmptyValue(), eval.NewError(eval.ErrorKindFormula, "arithmetic (%s) on string operand", op)
 	default:
 		panic("unsupported operator")
 	}
@@ -216,11 +216,11 @@ func evalStringOperator(op string, args []string) (eval.Value, error) {
 func evalFunc(ec *eval.Context, name string, args []eval.Value) (eval.Value, error) {
 	if f, ok := functions[name]; ok {
 		if len(args) < f.MinArgs || len(args) > f.MaxArgs {
-			return eval.NullValue(), eval.NewError(eval.ErrorKindFormula, "function %s accepts from %d to %d arguments, %d provided",
+			return eval.NewEmptyValue(), eval.NewError(eval.ErrorKindFormula, "function %s accepts from %d to %d arguments, %d provided",
 				name, f.MinArgs, f.MaxArgs, len(args))
 		}
 		return f.F(ec, args)
 	} else {
-		return eval.NullValue(), eval.NewError(eval.ErrorKindFormula, "function %s does not exist", name)
+		return eval.NewEmptyValue(), eval.NewError(eval.ErrorKindFormula, "function %s does not exist", name)
 	}
 }

@@ -62,6 +62,8 @@ func (c *Cell) EraseValue() {
 	c.intValue = 0
 	c.decimalValue = nil
 	c.formulaValue = nil
+	c.refs = nil
+	c.expression = nil
 	c.valueType = CellValueTypeEmpty
 }
 
@@ -160,12 +162,12 @@ func (c *Cell) StringValue(ec *eval.Context) (string, error) {
 func (c *Cell) Value(ec *eval.Context) (eval.Value, error) {
 	if c.valueType == CellValueUntyped {
 		if err := c.evaluateType(ec); err != nil {
-			return eval.NullValue(), err
+			return eval.NewEmptyValue(), err
 		}
 	}
 	switch c.valueType {
 	case CellValueTypeEmpty:
-		return eval.NewStringValue(""), nil
+		return eval.NewEmptyValue(), nil
 	case CellValueTypeText:
 		return eval.NewStringValue(c.rawValue), nil
 	case CellValueTypeInteger:
@@ -265,12 +267,15 @@ func updateVars(ec *eval.Context, x *formula.Expression, refs []eval.Value) erro
 	for i, v := range x.Variables() {
 		switch r := refs[i].(type) {
 		case *eval.CellRef:
-			sheetTitle, err := ec.DataProvider.SheetTitle(r)
-			if err != nil {
-				return err
+			v.Cell.Sheet = nil
+			if r.SheetIdx != ec.CurrentSheetIdx {
+				sheetTitle, err := ec.DataProvider.SheetTitle(r)
+				if err != nil {
+					return err
+				}
+				s := formula.Sheet(sheetTitle)
+				v.Cell.Sheet = &s
 			}
-			s := formula.Sheet(sheetTitle)
-			v.Cell.Sheet = &s
 			cellName, err := ec.DataProvider.CellName(r)
 			if err != nil {
 				return err

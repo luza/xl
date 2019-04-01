@@ -5,7 +5,8 @@ import (
 )
 
 const (
-	TypeBool = iota
+	TypeEmpty = iota
+	TypeBool
 	TypeDecimal
 	TypeString
 )

@@ -15,7 +15,7 @@ func (a *App) CellView(x, y int) *ui.CellView {
 			Name: document.CellName(x, y),
 		}
 	}
-	v, err := c.StringValue(eval.NewContext(a.doc))
+	v, err := c.StringValue(eval.NewContext(a.doc, a.doc.CurrentSheet.Idx))
 	if err != nil {
 		t := err.Error()
 		return &ui.CellView{
@@ -26,7 +26,7 @@ func (a *App) CellView(x, y int) *ui.CellView {
 	return &ui.CellView{
 		Name:        document.CellName(x, y),
 		DisplayText: v,
-		Expression:  c.Expression(eval.NewContext(a.doc)),
+		Expression:  c.Expression(eval.NewContext(a.doc, a.doc.CurrentSheet.Idx)),
 	}
 }
 
@@ -54,7 +54,7 @@ func (a *App) SheetView() *ui.SheetView {
 	if c != nil {
 		sv.FormulaLineView = ui.FormulaLineView{
 			DisplayText: c.RawValue(),
-			Expression:  c.Expression(eval.NewContext(a.doc)),
+			Expression:  c.Expression(eval.NewContext(a.doc, a.doc.CurrentSheet.Idx)),
 		}
 	}
 	return sv

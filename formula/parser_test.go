@@ -64,7 +64,7 @@ func TestParse(t *testing.T) {
 		assert.Lenf(t, vars, c.varsNum, "case %s: must return %d variables (returned %d)", c.f, c.varsNum, len(vars))
 		f, _ := expr.BuildFunc()
 		var dp eval.RefRegistryInterface
-		ec := eval.NewContext(dp)
+		ec := eval.NewContext(dp, 0)
 		v, err := f(ec, []eval.Value{
 			eval.NewDecimalValue(decimal.NewFromFloat(4)),
 			eval.NewDecimalValue(decimal.NewFromFloat(6)),
@@ -105,7 +105,7 @@ func TestExecuteErrors(t *testing.T) {
 		assert.NoErrorf(t, err, "case %s: must not fail on parse %s", c.f, err)
 		f, _ := expr.BuildFunc()
 		var dp eval.RefRegistryInterface
-		ec := eval.NewContext(dp)
+		ec := eval.NewContext(dp, 0)
 		_, err = f(ec, []eval.Value{
 			eval.NewDecimalValue(decimal.NewFromFloat(4)),
 			eval.NewDecimalValue(decimal.NewFromFloat(6)),

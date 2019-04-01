@@ -503,7 +503,7 @@ var functions = map[string]functionDef{
 func trim(ec *eval.Context, args []eval.Value) (eval.Value, error) {
 	s, err := args[0].StringValue(ec)
 	if err != nil {
-		return eval.NullValue(), err
+		return eval.NewEmptyValue(), err
 	}
 	return eval.NewStringValue(strings.Trim(s, "\n\r\t ")), nil
 }
@@ -513,7 +513,7 @@ func sum(ec *eval.Context, args []eval.Value) (eval.Value, error) {
 	for i := range args {
 		d, err := args[i].DecimalValue(ec)
 		if err != nil {
-			return eval.NullValue(), err
+			return eval.NewEmptyValue(), err
 		}
 		s = s.Add(d)
 	}
@@ -524,7 +524,7 @@ func sum(ec *eval.Context, args []eval.Value) (eval.Value, error) {
 func if_(ec *eval.Context, args []eval.Value) (eval.Value, error) {
 	b, err := args[0].BoolValue(ec)
 	if err != nil {
-		return eval.NullValue(), err
+		return eval.NewEmptyValue(), err
 	}
 	if b {
 		return args[1], nil

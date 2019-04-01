@@ -136,7 +136,7 @@ func (e *Func) BuildFunc() (Function, int) {
 		for i := range e.Arguments {
 			values[i], err = subFunc[i](ec, args[ca:])
 			if err != nil {
-				return eval.NullValue(), err
+				return eval.NewEmptyValue(), err
 			}
 			ca += consumedArgs[i]
 		}
@@ -150,10 +150,10 @@ func evalBinaryOperator(op string, f1 Function, consumedArgs1 int, f2 Function, 
 		var v1, v2 eval.Value
 		var err error
 		if v1, err = f1(ec, args); err != nil {
-			return eval.NullValue(), err
+			return eval.NewEmptyValue(), err
 		}
 		if v2, err = f2(ec, args[consumedArgs1:]); err != nil {
-			return eval.NullValue(), err
+			return eval.NewEmptyValue(), err
 		}
 		return evalOperator(ec, op, v1, v2)
 	}
@@ -164,7 +164,7 @@ func evalUnaryOperator(op string, f1 Function, consumedArgs1 int) (Function, int
 	f := func(ec *eval.Context, args []eval.Value) (eval.Value, error) {
 		v, err := f1(ec, args)
 		if err != nil {
-			return eval.NullValue(), err
+			return eval.NewEmptyValue(), err
 		}
 		return evalOperator(ec, op, v)
 	}

@@ -11,8 +11,10 @@ type staticValue struct {
 	stringValue  string
 }
 
-func NullValue() Value {
-	return staticValue{}
+func NewEmptyValue() Value {
+	return staticValue{
+		valueType: TypeEmpty,
+	}
 }
 
 func NewBoolValue(v bool) Value {
@@ -42,11 +44,16 @@ func (v staticValue) Type(*Context) (int, error) {
 
 func (v staticValue) BoolValue(ec *Context) (bool, error) {
 	switch v.valueType {
+	case TypeEmpty:
+		return false, nil
 	case TypeBool:
 		return v.boolValue, nil
 	case TypeDecimal:
 		return !v.decimalValue.Equal(decimal.Zero), nil
 	case TypeString:
+		if len(v.stringValue) == 0 {
+			return false, nil
+		}
 		return false, NewError(ErrorKindCasting, "unable to cast string value %s to bool", v.stringValue)
 	default:
 		panic("invalid type")
@@ -55,6 +62,8 @@ func (v staticValue) BoolValue(ec *Context) (bool, error) {
 
 func (v staticValue) DecimalValue(ec *Context) (decimal.Decimal, error) {
 	switch v.valueType {
+	case TypeEmpty:
+		return decimal.Zero, nil
 	case TypeBool:
 		if v.boolValue {
 			return decimal.NewFromFloat(1.0), nil
@@ -64,6 +73,9 @@ func (v staticValue) DecimalValue(ec *Context) (decimal.Decimal, error) {
 	case TypeDecimal:
 		return v.decimalValue, nil
 	case TypeString:
+		if len(v.stringValue) == 0 {
+			return decimal.Zero, nil
+		}
 		return decimal.Zero, NewError(ErrorKindCasting, "unable to cast string value %s to decimal", v.stringValue)
 	default:
 		panic("invalid type")
@@ -72,6 +84,8 @@ func (v staticValue) DecimalValue(ec *Context) (decimal.Decimal, error) {
 
 func (v staticValue) StringValue(ec *Context) (string, error) {
 	switch v.valueType {
+	case TypeEmpty:
+		return "", nil
 	case TypeBool:
 		if v.boolValue {
 			return "TRUE", nil

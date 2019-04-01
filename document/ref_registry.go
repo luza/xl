@@ -54,11 +54,11 @@ func (d *Document) CellName(r *eval.CellRef) (string, error) {
 func (d *Document) Value(ec *eval.Context, r *eval.CellRef) (eval.Value, error) {
 	s := d.sheetByIdx(r.SheetIdx)
 	if s == nil {
-		return eval.NullValue(), eval.NewError(eval.ErrorKindName, "sheet does not exist")
+		return eval.NewEmptyValue(), eval.NewError(eval.ErrorKindName, "sheet does not exist")
 	}
 	c := s.Cell(r.Cell.X, r.Cell.Y)
 	if c == nil {
-		return eval.NullValue(), nil
+		return eval.NewEmptyValue(), nil
 	}
 	return c.Value(ec)
 }

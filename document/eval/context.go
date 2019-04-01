@@ -1,13 +1,15 @@
 package eval
 
 type Context struct {
-	DataProvider RefRegistryInterface
-	visitedCells []*CellRef
+	DataProvider    RefRegistryInterface
+	CurrentSheetIdx int
+	visitedCells    []*CellRef
 }
 
-func NewContext(dp RefRegistryInterface) *Context {
+func NewContext(dp RefRegistryInterface, currentSheetIdx int) *Context {
 	ec := &Context{
-		DataProvider: dp,
+		DataProvider:    dp,
+		CurrentSheetIdx: currentSheetIdx,
 	}
 	return ec
 }
