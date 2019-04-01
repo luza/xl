@@ -3,12 +3,10 @@ package document
 import (
 	"xl/document/eval"
 	"xl/document/sheet"
-	"xl/log"
 
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"go.uber.org/zap"
 )
 
 func TestCellNameToXY(t *testing.T) {
@@ -59,47 +57,68 @@ func TestColName(t *testing.T) {
 }
 
 func TestCellStringValue(t *testing.T) {
-	log.L = zap.NewNop()
-
 	d := NewWithEmptySheet()
+	d.CurrentSheet.SetCell(0, 0, sheet.NewCellUntyped("1"))
 
-	s1 := d.CurrentSheet
+	v, err := d.CurrentSheet.Cell(0, 0).StringValue(eval.NewContext(d, d.CurrentSheet.Idx))
+	assert.NoError(t, err)
+	assert.Equal(t, "1", v)
+}
 
-	s1.SetCell(0, 0, sheet.NewCellUntyped("1"))
-	s1.SetCell(0, 1, sheet.NewCellUntyped("=A1+1"))
-	s1.SetCell(0, 2, sheet.NewCellUntyped("=A3"))
-	s1.SetCell(0, 3, sheet.NewCellUntyped("=A4+1"))
-	s1.SetCell(0, 4, sheet.NewCellUntyped("=A1+A1")) // 2
-	s1.SetCell(0, 5, sheet.NewCellUntyped("=1+A6"))
+func TestCellSimpleArithmetic(t *testing.T) {
+	d := NewWithEmptySheet()
+	d.CurrentSheet.SetCell(0, 0, sheet.NewCellUntyped("1"))
+	d.CurrentSheet.SetCell(0, 1, sheet.NewCellUntyped("=A1+1"))
+
+	v, err := d.CurrentSheet.Cell(0, 1).StringValue(eval.NewContext(d, d.CurrentSheet.Idx))
+	assert.NoError(t, err)
+	assert.Equal(t, "2", v)
+}
+
+func TestCellSimpleCircularReferencing(t *testing.T) {
+	d := NewWithEmptySheet()
+	d.CurrentSheet.SetCell(0, 0, sheet.NewCellUntyped("=A1"))
+
+	_, err := d.CurrentSheet.Cell(0, 0).StringValue(eval.NewContext(d, d.CurrentSheet.Idx))
+	assert.EqualError(t, err, "circular reference")
+}
+
+func TestCellSimpleCircularReferencingWithArithmetic(t *testing.T) {
+	d := NewWithEmptySheet()
+	d.CurrentSheet.SetCell(0, 0, sheet.NewCellUntyped("=A1+1"))
+
+	_, err := d.CurrentSheet.Cell(0, 0).StringValue(eval.NewContext(d, d.CurrentSheet.Idx))
+	assert.EqualError(t, err, "circular reference")
+}
+
+func TestCellSimpleCircularReferencingWithArithmetic2(t *testing.T) {
+	d := NewWithEmptySheet()
+	d.CurrentSheet.SetCell(0, 0, sheet.NewCellUntyped("=1+A1"))
+
+	_, err := d.CurrentSheet.Cell(0, 0).StringValue(eval.NewContext(d, d.CurrentSheet.Idx))
+	assert.EqualError(t, err, "circular reference")
+}
+
+func TestCellMultipleReferencingCellInArithmetic(t *testing.T) {
+	d := NewWithEmptySheet()
+	d.CurrentSheet.SetCell(0, 0, sheet.NewCellUntyped("1"))
+	d.CurrentSheet.SetCell(0, 1, sheet.NewCellUntyped("=A1+A1"))
+
+	v, err := d.CurrentSheet.Cell(0, 1).StringValue(eval.NewContext(d, d.CurrentSheet.Idx))
+	assert.NoError(t, err)
+	assert.Equal(t, "2", v)
+}
+
+func TestCellEmptyCellArithmetic(t *testing.T) {
+	d := NewWithEmptySheet()
 
 	s2, err := d.NewSheet("sh2")
 	assert.NoError(t, err)
 
-	s1.SetCell(0, 6, sheet.NewCellUntyped("='sh2'!A1+1"))
+	d.CurrentSheet.SetCell(0, 0, sheet.NewCellUntyped("='sh2'!A1+1"))
 	s2.SetCell(0, 0, sheet.NewCellUntyped(""))
 
-	v, err := s1.Cell(0, 0).StringValue(eval.NewContext(d, s1.Idx))
-	assert.NoError(t, err)
-	assert.Equal(t, "1", v)
-
-	v, err = s1.Cell(0, 1).StringValue(eval.NewContext(d, s1.Idx))
-	assert.NoError(t, err)
-	assert.Equal(t, "2", v)
-
-	_, err = s1.Cell(0, 2).StringValue(eval.NewContext(d, s1.Idx))
-	assert.EqualError(t, err, "circular reference")
-
-	_, err = s1.Cell(0, 3).StringValue(eval.NewContext(d, s1.Idx))
-	assert.EqualError(t, err, "circular reference")
-
-	v, err = s1.Cell(0, 4).StringValue(eval.NewContext(d, s1.Idx))
-	assert.NoError(t, err)
-	assert.Equal(t, "2", v)
-
-	_, err = s1.Cell(0, 5).StringValue(eval.NewContext(d, s1.Idx))
-	assert.EqualError(t, err, "circular reference")
-
-	v, err = s1.Cell(0, 6).StringValue(eval.NewContext(d, s1.Idx))
+	v, err := d.CurrentSheet.Cell(0, 0).StringValue(eval.NewContext(d, d.CurrentSheet.Idx))
 	assert.NoError(t, err)
 	assert.Equal(t, "1", v)
 }
