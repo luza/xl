@@ -29,6 +29,7 @@ func (s *staticSegment) Cell(x, y int) *Cell {
 
 // SetCell fills new cell on position of given X and Y.
 func (s *staticSegment) SetCell(x, y int, cell *Cell) {
+	s.Cells[x-s.size.X][y-s.size.Y].Free()
 	s.Cells[x-s.size.X][y-s.size.Y] = *cell
 }
 
@@ -54,6 +55,7 @@ func (s *staticSegment) InsertEmptyCol(x int) {
 
 func (s *staticSegment) DeleteRow(y int) {
 	for x := 0; x < s.size.Width; x++ {
+		s.Cells[x][y].Free()
 		copy(s.Cells[x][y:], s.Cells[x][y+1:])
 		s.Cells[x][len(s.Cells[x])-1] = Cell{}
 		s.Cells[x] = s.Cells[x][:len(s.Cells[x])-1]
@@ -62,6 +64,9 @@ func (s *staticSegment) DeleteRow(y int) {
 }
 
 func (s *staticSegment) DeleteCol(x int) {
+	for y := 0; y < s.size.Height; y++ {
+		s.Cells[x][y].Free()
+	}
 	copy(s.Cells[x:], s.Cells[x+1:])
 	s.Cells[len(s.Cells)-1] = nil
 	s.Cells = s.Cells[:len(s.Cells)-1]

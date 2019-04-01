@@ -46,6 +46,15 @@ func NewCellUntyped(v string) *Cell {
 	return c
 }
 
+func (c *Cell) Free() {
+	for _, r := range c.refs {
+		switch r := r.(type) {
+		case *eval.CellRef:
+			r.UsageCount--
+		}
+	}
+}
+
 // EraseValue resets cell value to initial.
 func (c *Cell) EraseValue() {
 	c.rawValue = ""

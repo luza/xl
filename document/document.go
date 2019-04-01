@@ -23,15 +23,13 @@ type Document struct {
 	maxSheetIdx int
 
 	eval.RefRegistryInterface
-	refRegistry eval.RefRegistry
+	refRegistry []*eval.CellRef
 }
 
 var cellNamePattern = regexp.MustCompile(`^\$?([A-Z]+)\$?([0-9]+)$`)
 
 func New() *Document {
-	return &Document{
-		refRegistry: make(eval.RefRegistry),
-	}
+	return &Document{}
 }
 
 func NewWithEmptySheet() *Document {
@@ -41,7 +39,6 @@ func NewWithEmptySheet() *Document {
 		CurrentSheet:  s,
 		CurrentSheetN: 0,
 		maxSheetIdx:   1,
-		refRegistry:   make(eval.RefRegistry),
 	}
 }
 
@@ -73,26 +70,26 @@ func (d *Document) NewSheet(title string) (*sheet.Sheet, error) {
 func (d *Document) InsertEmptyRow(n int) {
 	d.CurrentSheet.Cursor.Y += n
 	d.CurrentSheet.InsertEmptyRow(d.CurrentSheet.Cursor.Y)
-	// TODO: relinking
+	d.moveRefsDown(d.CurrentSheet.Cursor.Y)
 }
 
 // InsertEmptyCol inserts new empty column at position of cursor plus N.
 func (d *Document) InsertEmptyCol(n int) {
 	d.CurrentSheet.Cursor.X += n
 	d.CurrentSheet.InsertEmptyCol(d.CurrentSheet.Cursor.X)
-	// TODO: relinking
+	d.moveRefsRight(d.CurrentSheet.Cursor.X)
 }
 
 // DeleteRow deletes row under cursor.
 func (d *Document) DeleteRow() {
 	d.CurrentSheet.DeleteRow(d.CurrentSheet.Cursor.Y)
-	// TODO: relinking
+	d.moveRefsUp(d.CurrentSheet.Cursor.Y)
 }
 
 // DeleteCol deletes column under cursor.
 func (d *Document) DeleteCol() {
 	d.CurrentSheet.DeleteCol(d.CurrentSheet.Cursor.X)
-	// TODO: relinking
+	d.moveRefsLeft(d.CurrentSheet.Cursor.X)
 }
 
 // FindCell finds position of the cell with given name.

@@ -1,11 +1,8 @@
 package document
 
 import (
-	"fmt"
-
 	"xl/document/eval"
 	"xl/document/sheet"
-	"xl/log"
 
 	"github.com/shopspring/decimal"
 )
@@ -31,28 +28,23 @@ func (d *Document) NewCellRef(sheetTitle, cellName string) (*eval.CellRef, error
 		return nil, err
 	}
 	// existing link?
-	if r, ok := d.refRegistry[s.Idx][x][y]; ok {
-		log.L.Error(fmt.Sprintf("reused link sheet %d x %d y %d\n", s.Idx, x, y))
-		return r, nil
+	for _, r := range d.refRegistry {
+		if r.SheetIdx == s.Idx && r.Cell.X == x && r.Cell.Y == y {
+			r.UsageCount++
+			return r, nil
+		}
 	}
 	// not found? create new one
 	r := eval.NewCellRef(s.Idx, eval.Axis{X: x, Y: y})
-	if _, ok := d.refRegistry[s.Idx]; !ok {
-		d.refRegistry[s.Idx] = make(map[int]map[int]*eval.CellRef)
-	}
-	if _, ok := d.refRegistry[s.Idx][x]; !ok {
-		d.refRegistry[s.Idx][x] = make(map[int]*eval.CellRef)
-	}
-	d.refRegistry[s.Idx][x][y] = r
+	d.refRegistry = append(d.refRegistry, r)
 	return r, nil
 }
 
 func (d *Document) SheetTitle(r *eval.CellRef) (string, error) {
-	s := d.sheetByIdx(r.SheetIdx)
-	if s != nil {
-		return "", eval.NewError(eval.ErrorKindRef, "sheet does not exist")
+	if s := d.sheetByIdx(r.SheetIdx); s != nil {
+		return s.Title, nil
 	}
-	return s.Title, nil
+	return "", eval.NewError(eval.ErrorKindRef, "sheet does not exist")
 }
 
 func (d *Document) CellName(r *eval.CellRef) (string, error) {
@@ -105,4 +97,36 @@ func (d *Document) StringValue(ec *eval.Context, r *eval.CellRef) (string, error
 		return "", nil
 	}
 	return c.StringValue(ec)
+}
+
+func (d *Document) moveRefsRight(n int) {
+	for _, r := range d.refRegistry {
+		if r.SheetIdx == d.CurrentSheet.Idx && r.Cell.X >= n {
+			r.Cell.X++
+		}
+	}
+}
+
+func (d *Document) moveRefsLeft(n int) {
+	for _, r := range d.refRegistry {
+		if r.SheetIdx == d.CurrentSheet.Idx && r.Cell.X > n {
+			r.Cell.X--
+		}
+	}
+}
+
+func (d *Document) moveRefsDown(n int) {
+	for _, r := range d.refRegistry {
+		if r.SheetIdx == d.CurrentSheet.Idx && r.Cell.Y >= n {
+			r.Cell.Y++
+		}
+	}
+}
+
+func (d *Document) moveRefsUp(n int) {
+	for _, r := range d.refRegistry {
+		if r.SheetIdx == d.CurrentSheet.Idx && r.Cell.Y > n {
+			r.Cell.Y--
+		}
+	}
 }

@@ -4,8 +4,6 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-type RefRegistry map[int]map[int]map[int]*CellRef
-
 type RefRegistryInterface interface {
 	NewCellRef(cellName, sheetTitle string) (*CellRef, error)
 	SheetTitle(r *CellRef) (string, error)

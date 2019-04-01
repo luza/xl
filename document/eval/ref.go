@@ -12,14 +12,16 @@ type Axis struct {
 type CellRef struct {
 	Value
 
-	SheetIdx int
-	Cell     Axis
+	SheetIdx   int
+	Cell       Axis
+	UsageCount int // TODO: garbage collecting
 }
 
 func NewCellRef(sheetIdx int, cell Axis) *CellRef {
 	return &CellRef{
-		SheetIdx: sheetIdx,
-		Cell:     cell,
+		SheetIdx:   sheetIdx,
+		Cell:       cell,
+		UsageCount: 1,
 	}
 }
 
