@@ -14,7 +14,6 @@ import (
 	"strings"
 
 	"github.com/gdamore/tcell"
-	"github.com/gdamore/tcell/termbox"
 	"go.uber.org/zap"
 )
 
@@ -24,7 +23,7 @@ const (
 
 type App struct {
 	ui.DataDelegateInterface
-
+	Screen  tcell.Screen
 	logger  *zap.Logger
 	input   ui.InputInterface
 	output  ui.OutputInterface
@@ -37,6 +36,7 @@ type App struct {
 }
 
 type Config struct {
+	Screen tcell.Screen
 	Logger *zap.Logger
 	Input  ui.InputInterface
 	Output ui.OutputInterface
@@ -44,6 +44,7 @@ type Config struct {
 
 func New(config *Config) *App {
 	a := &App{
+		Screen:  config.Screen,
 		logger:  config.Logger,
 		input:   config.Input,
 		output:  config.Output,
@@ -99,22 +100,24 @@ func (a *App) WriteAs(filename string) error {
 // Loop is the main loop, reads and processes key presses.
 func (a *App) Loop() {
 	for {
-		switch ev := termbox.PollEvent(); ev.Type {
-		case termbox.EventKey:
+		ev := a.Screen.PollEvent()
+		switch ev := ev.(type) {
+		case *tcell.EventKey:
 			e := ui.KeyEvent{
-				Mod: tcell.ModMask(ev.Mod),
-				Key: tcell.Key(ev.Key),
-				Ch:  ev.Ch,
+				
+				Mod: ev.Modifiers(),
+				Key: ev.Key(),
+				Ch:  ev.Rune(),
 			}
 			stop := a.processKeyEvent(e)
 			if stop {
 				return
 			}
-		case termbox.EventResize:
+		case *tcell.EventResize:
 			a.output.RefreshView()
-		case termbox.EventMouse:
+		case *tcell.EventMouse:
 			//handling event mouse
-		case termbox.EventError:
+		case *tcell.EventError:
 			a.logger.Error("unknown input event")
 			return
 		}

@@ -15,7 +15,6 @@ func main() {
 	defer func() {
 		_ = logger.Sync()
 	}()
-
 	log.L = logger
 
 	logger.Info("application starting")
@@ -24,6 +23,7 @@ func main() {
 	defer t.Close()
 
 	a := app.New(&app.Config{
+		Screen: t.GetScreen(),
 		Logger: logger,
 		Input:  t.Input(),
 		Output: t.Output(),

@@ -1,11 +1,13 @@
 package termbox
 
 import (
+	"fmt"
+	"xl/log"
 	"xl/ui"
 
 	"bytes"
 
-	"github.com/gdamore/tcell/termbox"
+	"github.com/gdamore/tcell"
 )
 
 const (
@@ -40,7 +42,7 @@ func (t *Termbox) RefreshView() {
 	if t.dirty&ui.DirtyFormulaLine > 0 {
 		formulaLineView := sheetView.FormulaLineView
 		currentCellName := t.dataDelegate.CellView(sheetView.Cursor.X, sheetView.Cursor.Y).Name
-		drawCell(0, 0, t.screenWidth, formulaLineHeight, currentCellName, colorYellow, colorBlack)
+		t.drawCell(0, 0, t.screenWidth, formulaLineHeight, currentCellName, colorYellow, colorBlack)
 		text := formulaLineView.DisplayText
 		if formulaLineView.Expression != nil {
 			var buf bytes.Buffer
@@ -49,7 +51,7 @@ func (t *Termbox) RefreshView() {
 			})
 			text = buf.String()
 		}
-		drawCell(len(currentCellName)+1, 0, t.screenWidth, formulaLineHeight, text, colorWhite, colorBlack)
+		t.drawCell(len(currentCellName)+1, 0, t.screenWidth, formulaLineHeight, text, colorWhite, colorBlack)
 	}
 
 	// vertical ruler
@@ -64,7 +66,7 @@ func (t *Termbox) RefreshView() {
 			if cellY == sheetView.Cursor.Y {
 				fg = colorYellow
 			}
-			drawCell(0, screenY, len(rowView.Name)+1+1, heightChars, rowView.Name, fg, colorBlack)
+			t.drawCell(0, screenY, len(rowView.Name)+1+1, heightChars, rowView.Name, fg, colorBlack)
 			if len(rowView.Name)+1 > t.vRulerWidth {
 				t.vRulerWidth = len(rowView.Name) + 1
 			}
@@ -86,7 +88,7 @@ func (t *Termbox) RefreshView() {
 			if cellX == sheetView.Cursor.X {
 				fg = colorYellow
 			}
-			drawCell(screenX, screenY, widthChars, hRulerHeight, colView.Name, fg, colorBlack)
+			t.drawCell(screenX, screenY, widthChars, hRulerHeight, colView.Name, fg, colorBlack)
 			cellX++
 			screenX += widthChars
 		}
@@ -117,7 +119,7 @@ func (t *Termbox) RefreshView() {
 				if cellX == sheetView.Cursor.X && cellY == sheetView.Cursor.Y {
 					t.lastCursorX = screenX
 					t.lastCursorY = screenY
-					termbox.SetCursor(screenX, screenY)
+					t.Screen.ShowCursor(screenX, screenY)
 				}
 
 				if c.Error != nil {
@@ -125,7 +127,7 @@ func (t *Termbox) RefreshView() {
 					bgColor = colorRed
 				}
 
-				drawCell(screenX, screenY, widthChars, heightChars, text, colorGrey, bgColor)
+				t.drawCell(screenX, screenY, widthChars, heightChars, text, colorGrey, bgColor)
 
 				cellX++
 				screenX += widthChars
@@ -146,7 +148,7 @@ func (t *Termbox) RefreshView() {
 				bgColor = colorWhite
 				fgColor = colorBlack
 			}
-			drawCell(screenX, screenY, sheetNameMaxWidth, statusLineHeight, s, fgColor, bgColor)
+			t.drawCell(screenX, screenY, sheetNameMaxWidth, statusLineHeight, s, fgColor, bgColor)
 			screenX += sheetNameMaxWidth
 		}
 		fgColor := colorWhite
@@ -154,31 +156,41 @@ func (t *Termbox) RefreshView() {
 		if t.statusFlags&ui.StatusFlagError > 0 {
 			bgColor = colorRed
 		}
-		drawCell(screenX, screenY, t.screenWidth-screenX, statusLineHeight, t.statusMessage, fgColor, bgColor)
+		t.drawCell(screenX, screenY, t.screenWidth-screenX, statusLineHeight, t.statusMessage, fgColor, bgColor)
 	}
 
 	t.dirty = 0
-
-	_ = termbox.Flush()
+	t.Screen.Show()
+	//_ = termbox.Flush()
 }
 
-func drawCell(x int, y int, width int, height int, text string, fg int, bg int) {
+func (t *Termbox) drawCell(x int, y int, width int, height int, text string, fg int32, bg int32) {
+
+	defer func() {
+		if r := recover(); r != nil {
+			log.L.Error(fmt.Sprintf("Recovered from: ", r))
+		}
+	}()
+
+	var st tcell.Style
+	st.Background(tcell.NewHexColor(bg))
 	textAsRunes := []rune(text)
 	textLen := len(textAsRunes)
 	for cursorY := y; cursorY < y+height; cursorY++ {
 		indexX := 0
 		for cursorX := x; cursorX < x+width; cursorX++ {
 			char := ' '
-			charFg := fg
+			st.Foreground(tcell.NewHexColor(fg))
 			if cursorY == y && indexX < textLen {
 				if textLen > width && cursorX == x+width-1 {
 					char = '>'
-					charFg = colorYellow
+					st.Foreground(tcell.NewHexColor(colorYellow))
 				} else {
 					char = textAsRunes[indexX]
 				}
 			}
-			termbox.SetCell(cursorX, cursorY, char, termbox.Attribute(charFg), termbox.Attribute(bg))
+			t.Screen.SetContent(cursorX, cursorY, char, nil, st)
+			//termbox.SetCell(cursorX, cursorY, char, termbox.Attribute(charFg), termbox.Attribute(bg))
 			indexX++
 		}
 	}

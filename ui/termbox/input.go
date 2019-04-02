@@ -6,26 +6,33 @@ import (
 	"errors"
 
 	"github.com/gdamore/tcell"
-	"github.com/gdamore/tcell/termbox"
 )
 
 // ReadKey blocks until new key is read. Returns the key read.
 func (t *Termbox) ReadKey() (ui.InputEventInterface, error) {
-	event := termbox.PollEvent()
-	if event.Type == termbox.EventKey {
+	ev := t.Screen.PollEvent()
+	switch ev := ev.(type) {
+	case *tcell.EventKey:
 		e := ui.KeyEvent{
-			Mod: tcell.ModMask(event.Mod),
-			Key: tcell.Key(event.Key),
-			Ch:  event.Ch,
+
+			Mod: ev.Modifiers(),
+			Key: ev.Key(),
+			Ch:  ev.Rune(),
 		}
 		return e, nil
-	} else {
+
+	case *tcell.EventResize:
+	//handling resize
+	case *tcell.EventMouse:
+	//handling mouse
+	case *tcell.EventError:
 		return nil, errors.New("unknown event")
 	}
+	return nil, nil
 }
 
 func (t *Termbox) EditCellValue(oldValue string) (string, error) {
-	w, _ := termbox.Size()
+	w, _ := t.Screen.Size()
 	v, err := t.enterEditorMode(&editorConfig{
 		X:        0,
 		Y:        0,
@@ -43,8 +50,8 @@ func (t *Termbox) EditCellValue(oldValue string) (string, error) {
 }
 
 func (t *Termbox) InputCommand() (string, error) {
-	w, h := termbox.Size()
-	drawCell(0, h-statusLineHeight, 1, statusLineHeight, ":", colorWhite, colorBlack)
+	w, h := t.Screen.Size()
+	t.drawCell(0, h-statusLineHeight, 1, statusLineHeight, ":", colorWhite, colorBlack)
 	v, err := t.enterEditorMode(&editorConfig{
 		X:        1,
 		Y:        h - statusLineHeight,

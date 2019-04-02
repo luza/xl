@@ -3,13 +3,13 @@ package termbox
 import (
 	"xl/ui"
 
-	"github.com/gdamore/tcell/termbox"
+	"github.com/gdamore/tcell"
 )
 
 type Termbox struct {
 	ui.InputInterface
 	ui.OutputInterface
-
+	Screen       tcell.Screen
 	dataDelegate ui.DataDelegateInterface
 
 	// Value of termbox.Size()
@@ -36,13 +36,27 @@ type Termbox struct {
 }
 
 func New() *Termbox {
-	err := termbox.Init()
-	if err != nil {
-		panic(err)
+	// err, s := Init()
+	// if err != nil {
+	// 	panic(err)
+	// }
+	var s tcell.Screen
+	var e error
+	if s, e = tcell.NewScreen(); e != nil {
+		panic(e)
+	} else if e = s.Init(); e != nil {
+		panic(e)
 	}
-	termbox.SetOutputMode(termbox.Output256)
-	width, height := termbox.Size()
+
+	s.SetStyle(tcell.StyleDefault.
+		Foreground(tcell.ColorBlack).
+		Background(tcell.ColorWhite))
+	s.Clear()
+
+	//termbox.SetOutputMode(termbox.Output256)
+	width, height := s.Size()
 	return &Termbox{
+		Screen:       s,
 		screenWidth:  width,
 		screenHeight: height,
 		dirty:        ui.DirtyHRuler | ui.DirtyVRuler | ui.DirtyGrid | ui.DirtyFormulaLine | ui.DirtyStatusLine,
@@ -50,7 +64,12 @@ func New() *Termbox {
 }
 
 func (t *Termbox) Close() {
-	termbox.Close()
+	//termbox.Close()
+	t.Screen.Fini()
+}
+
+func (t *Termbox) GetScreen() tcell.Screen {
+	return t.Screen
 }
 
 func (t *Termbox) Input() ui.InputInterface {
