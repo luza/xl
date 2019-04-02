@@ -110,17 +110,15 @@ func (s *Sheet) AddStaticSegment(x, y, width, height int, cells [][]Cell) Segmen
 	return segment
 }
 
-// Cell returns the cell for given X and Y.
+// cell returns the cell for given X and Y.
 func (s *Sheet) Cell(x, y int) *Cell {
-	for _, segment := range s.Segments {
-		if segment.Contains(x, y) {
-			return segment.Cell(x, y)
-		}
+	if segment := s.FindSegment(x, y); segment != nil {
+		return segment.Cell(x, y)
 	}
 	return nil
 }
 
-// CellUnderCursor returns the cell the cursor points to.
+// CellUnderCursor returns the cell the cursor is pointing to.
 func (s *Sheet) CellUnderCursor() *Cell {
 	return s.Cell(s.Cursor.X, s.Cursor.Y)
 }
@@ -128,19 +126,16 @@ func (s *Sheet) CellUnderCursor() *Cell {
 // SetCell fills the cell with new data.
 // If no such cell exists yet, created a new segment.
 func (s *Sheet) SetCell(x, y int, cell *Cell) {
-	segment := s.FindSegment(x, y)
-	if segment == nil {
-		// create new Segment
-		segment = s.AddStaticSegment(x, y, 1, 1, [][]Cell{{*cell}})
-	}
-	if st, ok := segment.(*staticSegment); ok {
-		st.SetCell(x, y, cell)
-	} else {
+	if segment := s.FindSegment(x, y); segment != nil {
+		segment.SetCell(x, y, cell)
 		// TODO: other types of Segments
+	} else {
+		// create new Segment
+		s.AddStaticSegment(x, y, 1, 1, [][]Cell{{*cell}})
 	}
 }
 
-// FindSegment iterates over segments to find the one containing cell with given X and Y.
+// FindSegment iterates over segments to find one containing cell with given X and Y.
 func (s *Sheet) FindSegment(x, y int) Segment {
 	for _, segment := range s.Segments {
 		if segment.Contains(x, y) {

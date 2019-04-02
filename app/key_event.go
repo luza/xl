@@ -6,7 +6,7 @@ import (
 
 	"fmt"
 
-	"github.com/gdamore/tcell/termbox"
+	"github.com/gdamore/tcell"
 )
 
 // processKeyEvent does the job associated with the key press.
@@ -16,27 +16,28 @@ func (a *App) processKeyEvent(event ui.KeyEvent) bool {
 		stop := a.inputCommand()
 		a.output.RefreshView()
 		return stop
+	case ' ':
+		a.pageDown()
+		a.output.RefreshView()
+		return false
 	}
 
 	switch event.Key {
-	case termbox.KeyCtrlC:
+	case tcell.KeyCtrlC:
 		return true
-	case termbox.KeySpace:
-		a.pageDown()
-		a.output.RefreshView()
-	case termbox.KeyArrowUp:
+	case tcell.KeyUp:
 		a.moveCursorUp()
 		a.output.RefreshView()
-	case termbox.KeyArrowDown:
+	case tcell.KeyDown:
 		a.moveCursorDown()
 		a.output.RefreshView()
-	case termbox.KeyArrowLeft:
+	case tcell.KeyLeft:
 		a.moveCursorLeft()
 		a.output.RefreshView()
-	case termbox.KeyArrowRight, termbox.KeyTab:
+	case tcell.KeyRight, tcell.KeyTab:
 		a.moveCursorRight()
 		a.output.RefreshView()
-	case termbox.KeyEnter:
+	case tcell.KeyEnter:
 		a.editCell()
 		a.output.RefreshView()
 	default:

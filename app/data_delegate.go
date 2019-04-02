@@ -1,11 +1,9 @@
 package app
 
 import (
-	"xl/document/value"
+	"xl/document"
+	"xl/document/eval"
 	"xl/ui"
-
-	"bytes"
-	"strconv"
 )
 
 // Callbacks collection providing data to be displayed.
@@ -14,34 +12,34 @@ func (a *App) CellView(x, y int) *ui.CellView {
 	c := a.doc.CurrentSheet.Cell(x, y)
 	if c == nil {
 		return &ui.CellView{
-			Name: cellName(x, y),
+			Name: document.CellName(x, y),
 		}
 	}
-	v, err := c.StringValue(value.NewEvalContext(a.doc))
+	v, err := c.StringValue(eval.NewContext(a.doc, a.doc.CurrentSheet.Idx))
 	if err != nil {
 		t := err.Error()
 		return &ui.CellView{
-			Name:  cellName(x, y),
+			Name:  document.CellName(x, y),
 			Error: &t,
 		}
 	}
 	return &ui.CellView{
-		Name:        cellName(x, y),
+		Name:        document.CellName(x, y),
 		DisplayText: v,
-		Expression:  c.Expression(value.NewEvalContext(a.doc)),
+		Expression:  c.Expression(eval.NewContext(a.doc, a.doc.CurrentSheet.Idx)),
 	}
 }
 
 func (a *App) RowView(n int) *ui.RowView {
 	return &ui.RowView{
-		Name:   rowName(n),
+		Name:   document.RowName(n),
 		Height: a.doc.CurrentSheet.RowSize(n),
 	}
 }
 
 func (a *App) ColView(n int) *ui.ColView {
 	return &ui.ColView{
-		Name:  colName(n),
+		Name:  document.ColName(n),
 		Width: a.doc.CurrentSheet.ColSize(n),
 	}
 }
@@ -56,7 +54,7 @@ func (a *App) SheetView() *ui.SheetView {
 	if c != nil {
 		sv.FormulaLineView = ui.FormulaLineView{
 			DisplayText: c.RawValue(),
-			Expression:  c.Expression(value.NewEvalContext(a.doc)),
+			Expression:  c.Expression(eval.NewContext(a.doc, a.doc.CurrentSheet.Idx)),
 		}
 	}
 	return sv
@@ -75,32 +73,4 @@ func (a *App) DocView() *ui.DocView {
 		Sheets:          sheetNames,
 		CurrentSheetIdx: currentSheetIdx,
 	}
-}
-
-// rowName returns name of row for given index.
-func rowName(n int) string {
-	return strconv.Itoa(n + 1)
-}
-
-// colName returns name of column for given index.
-func colName(n int) string {
-	alphabet := "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-	var result bytes.Buffer
-	result.WriteByte(alphabet[n%26])
-	n /= 26
-	for n > 0 {
-		result.WriteByte(alphabet[(n-1)%26])
-		n = (n - 1) / 26
-	}
-	// reverse bytes
-	b := result.Bytes()
-	for i, j := 0, len(b)-1; i < j; i, j = i+1, j-1 {
-		b[i], b[j] = b[j], b[i]
-	}
-	return string(b)
-}
-
-// cellName returns name for cell under given X and Y.
-func cellName(x, y int) string {
-	return colName(x) + rowName(y)
 }

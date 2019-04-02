@@ -13,6 +13,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/gdamore/tcell"
 	"github.com/gdamore/tcell/termbox"
 	"go.uber.org/zap"
 )
@@ -97,13 +98,12 @@ func (a *App) WriteAs(filename string) error {
 
 // Loop is the main loop, reads and processes key presses.
 func (a *App) Loop() {
-
 	for {
 		switch ev := termbox.PollEvent(); ev.Type {
 		case termbox.EventKey:
 			e := ui.KeyEvent{
-				Mod: ev.Mod,
-				Key: ev.Key,
+				Mod: tcell.ModMask(ev.Mod),
+				Key: tcell.Key(ev.Key),
 				Ch:  ev.Ch,
 			}
 			stop := a.processKeyEvent(e)
