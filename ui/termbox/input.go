@@ -34,6 +34,7 @@ func (t *Termbox) ReadKey() (ui.InputEventInterface, error) {
 func (t *Termbox) EditCellValue(oldValue string) (string, error) {
 	w, _ := t.Screen.Size()
 	v, err := t.enterEditorMode(&editorConfig{
+		Tbox:     t,
 		X:        0,
 		Y:        0,
 		Width:    w,
@@ -53,6 +54,7 @@ func (t *Termbox) InputCommand() (string, error) {
 	w, h := t.Screen.Size()
 	t.drawCell(0, h-statusLineHeight, 1, statusLineHeight, ":", colorWhite, colorBlack)
 	v, err := t.enterEditorMode(&editorConfig{
+		Tbox:     t,
 		X:        1,
 		Y:        h - statusLineHeight,
 		Width:    w - 1,

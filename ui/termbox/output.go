@@ -1,11 +1,8 @@
 package termbox
 
 import (
-	"fmt"
-	"xl/log"
-	"xl/ui"
-
 	"bytes"
+	"xl/ui"
 
 	"github.com/gdamore/tcell"
 )
@@ -161,36 +158,29 @@ func (t *Termbox) RefreshView() {
 
 	t.dirty = 0
 	t.Screen.Show()
-	//_ = termbox.Flush()
 }
 
-func (t *Termbox) drawCell(x int, y int, width int, height int, text string, fg int32, bg int32) {
-
-	defer func() {
-		if r := recover(); r != nil {
-			log.L.Error(fmt.Sprintf("Recovered from: ", r))
-		}
-	}()
+func (t *Termbox) drawCell(x int, y int, width int, height int, text string, fg tcell.Color, bg tcell.Color) {
 
 	var st tcell.Style
-	st.Background(tcell.NewHexColor(bg))
+	st = st.Background(bg)
+
 	textAsRunes := []rune(text)
 	textLen := len(textAsRunes)
 	for cursorY := y; cursorY < y+height; cursorY++ {
 		indexX := 0
 		for cursorX := x; cursorX < x+width; cursorX++ {
 			char := ' '
-			st.Foreground(tcell.NewHexColor(fg))
+			st = st.Foreground(fg)
 			if cursorY == y && indexX < textLen {
 				if textLen > width && cursorX == x+width-1 {
 					char = '>'
-					st.Foreground(tcell.NewHexColor(colorYellow))
+					st = st.Foreground(colorYellow)
 				} else {
 					char = textAsRunes[indexX]
 				}
 			}
 			t.Screen.SetContent(cursorX, cursorY, char, nil, st)
-			//termbox.SetCell(cursorX, cursorY, char, termbox.Attribute(charFg), termbox.Attribute(bg))
 			indexX++
 		}
 	}

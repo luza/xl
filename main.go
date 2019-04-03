@@ -22,6 +22,8 @@ func main() {
 	t := termbox.New()
 	defer t.Close()
 
+	logger.Info("Colors support", zap.Int("Count colors", t.Screen.Colors()))
+
 	a := app.New(&app.Config{
 		Screen: t.GetScreen(),
 		Logger: logger,

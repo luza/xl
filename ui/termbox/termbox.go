@@ -36,10 +36,7 @@ type Termbox struct {
 }
 
 func New() *Termbox {
-	// err, s := Init()
-	// if err != nil {
-	// 	panic(err)
-	// }
+	tcell.SetEncodingFallback(tcell.EncodingFallbackASCII)
 	var s tcell.Screen
 	var e error
 	if s, e = tcell.NewScreen(); e != nil {
@@ -48,12 +45,6 @@ func New() *Termbox {
 		panic(e)
 	}
 
-	s.SetStyle(tcell.StyleDefault.
-		Foreground(tcell.ColorBlack).
-		Background(tcell.ColorWhite))
-	s.Clear()
-
-	//termbox.SetOutputMode(termbox.Output256)
 	width, height := s.Size()
 	return &Termbox{
 		Screen:       s,
@@ -64,7 +55,6 @@ func New() *Termbox {
 }
 
 func (t *Termbox) Close() {
-	//termbox.Close()
 	t.Screen.Fini()
 }
 

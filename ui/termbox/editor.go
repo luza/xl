@@ -36,6 +36,7 @@ type ResizeEventDelegateInterface interface {
 }
 
 type editorConfig struct {
+	Tbox                *Termbox
 	X                   int
 	Y                   int
 	Width               int
@@ -43,8 +44,8 @@ type editorConfig struct {
 	MaxRunes            int
 	MaxLines            int
 	ResizeEventDelegate ResizeEventDelegateInterface
-	FgColor             int32
-	BgColor             int32
+	FgColor             tcell.Color
+	BgColor             tcell.Color
 	Value               string
 }
 
@@ -352,24 +353,25 @@ func (e *editor) insertLine() {
 }
 
 func (e *editor) redraw() {
-	// y := e.config.Y
-	// line := e.window.topLine
-	// for y-e.config.Y < e.config.Height {
-	// 	text := ""
-	// 	if line != nil && e.window.firstRune < len(string(line.data)) {
-	// 		text = string(line.data)[e.window.firstRune:]
-	// 	}
-	// 	drawCell(e.config.X, y, e.config.Width, 1, text, e.config.FgColor, e.config.BgColor)
-	// 	if line != nil {
-	// 		if line == e.cursor.line {
-	// 			termbox.SetCursor(e.config.X+e.cursor.offsetRunes-e.window.firstRune, y)
-	// 		}
-	// 		// advance to next line
-	// 		line = line.next
-	// 	}
-	// 	y++
-	// }
-	//_ = termbox.Flush()
+	y := e.config.Y
+	line := e.window.topLine
+	for y-e.config.Y < e.config.Height {
+		text := ""
+		if line != nil && e.window.firstRune < len(string(line.data)) {
+			text = string(line.data)[e.window.firstRune:]
+		}
+
+		e.config.Tbox.drawCell(e.config.X, y, e.config.Width, 1, text, e.config.FgColor, e.config.BgColor)
+		if line != nil {
+			if line == e.cursor.line {
+				e.config.Tbox.Screen.ShowCursor(e.config.X+e.cursor.offsetRunes-e.window.firstRune, y)
+			}
+			// advance to next line
+			line = line.next
+		}
+		y++
+	}
+	e.config.Tbox.Screen.Show()
 }
 
 func (e *editor) adjustWindow() {
