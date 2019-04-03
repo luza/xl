@@ -14,7 +14,6 @@ func (t *Termbox) ReadKey() (ui.InputEventInterface, error) {
 	switch ev := ev.(type) {
 	case *tcell.EventKey:
 		e := ui.KeyEvent{
-
 			Mod: ev.Modifiers(),
 			Key: ev.Key(),
 			Ch:  ev.Rune(),

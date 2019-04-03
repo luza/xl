@@ -360,7 +360,6 @@ func (e *editor) redraw() {
 		if line != nil && e.window.firstRune < len(string(line.data)) {
 			text = string(line.data)[e.window.firstRune:]
 		}
-
 		e.config.Tbox.drawCell(e.config.X, y, e.config.Width, 1, text, e.config.FgColor, e.config.BgColor)
 		if line != nil {
 			if line == e.cursor.line {

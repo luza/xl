@@ -1,10 +1,11 @@
 package main
 
 import (
-	"flag"
 	"xl/app"
 	"xl/log"
 	"xl/ui/termbox"
+
+	"flag"
 
 	"go.uber.org/zap"
 )
@@ -14,6 +15,7 @@ func main() {
 	defer func() {
 		_ = logger.Sync()
 	}()
+
 	log.L = logger
 
 	logger.Info("application starting")

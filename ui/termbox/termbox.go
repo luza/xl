@@ -9,8 +9,11 @@ import (
 type Termbox struct {
 	ui.InputInterface
 	ui.OutputInterface
-	screen       tcell.Screen
+
 	dataDelegate ui.DataDelegateInterface
+
+	// Screen object
+	screen tcell.Screen
 
 	// Value of termbox.Size()
 	screenWidth  int
