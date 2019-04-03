@@ -5,11 +5,12 @@ import (
 )
 
 type RefRegistryInterface interface {
-	NewCellRef(cellName, sheetTitle string) (*CellRef, error)
-	SheetTitle(r *CellRef) (string, error)
-	CellName(r *CellRef) (string, error)
-	Value(ec *Context, r *CellRef) (Value, error)
-	BoolValue(ec *Context, r *CellRef) (bool, error)
-	DecimalValue(ec *Context, r *CellRef) (decimal.Decimal, error)
-	StringValue(ec *Context, r *CellRef) (string, error)
+	NewCellRef(sheetTitle, cellName string) (*CellRef, error)
+	NewRangeRef(sheetTitle, cellFromName, cellToName string) (*RangeRef, error)
+	SheetTitle(sheetIdx int) (string, error)
+	CellName(cell Cell) (string, error)
+	Value(ec *Context, cell Cell) (Value, error)
+	BoolValue(ec *Context, cell Cell) (bool, error)
+	DecimalValue(ec *Context, cell Cell) (decimal.Decimal, error)
+	StringValue(ec *Context, cell Cell) (string, error)
 }

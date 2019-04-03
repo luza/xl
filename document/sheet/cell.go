@@ -243,16 +243,19 @@ func guessCellType(v string) (int, interface{}) {
 func makeRefs(vars []*formula.Variable, ec *eval.Context) ([]eval.Value, error) {
 	values := make([]eval.Value, len(vars))
 	for i := range vars {
+		c := vars[i].Cell
+		var s string
+		if c.Sheet != nil {
+			s = string(*c.Sheet)
+		}
 		if vars[i].CellTo != nil {
 			// range
-			//links[i] = dd.LinkRange(c.cell, c.CellTo, c.Sheet)
-			//values[i] = eval.NewLinkValue(l)
-		} else {
-			c := vars[i].Cell
-			var s string
-			if c.Sheet != nil {
-				s = string(*c.Sheet)
+			ref, err := ec.DataProvider.NewRangeRef(s, c.Cell, vars[i].CellTo.Cell)
+			if err != nil {
+				return nil, err
 			}
+			values[i] = ref
+		} else {
 			ref, err := ec.DataProvider.NewCellRef(s, c.Cell)
 			if err != nil {
 				return nil, err
@@ -268,19 +271,21 @@ func updateVars(ec *eval.Context, x *formula.Expression, refs []eval.Value) erro
 		switch r := refs[i].(type) {
 		case *eval.CellRef:
 			v.Cell.Sheet = nil
-			if r.SheetIdx != ec.CurrentSheetIdx {
-				sheetTitle, err := ec.DataProvider.SheetTitle(r)
+			if r.Cell.SheetIdx != ec.CurrentSheetIdx {
+				sheetTitle, err := ec.DataProvider.SheetTitle(r.Cell.SheetIdx)
 				if err != nil {
 					return err
 				}
 				s := formula.Sheet(sheetTitle)
 				v.Cell.Sheet = &s
 			}
-			cellName, err := ec.DataProvider.CellName(r)
+			cellName, err := ec.DataProvider.CellName(r.Cell)
 			if err != nil {
 				return err
 			}
 			v.Cell.Cell = cellName
+		case *eval.RangeRef:
+			// TODO
 		default:
 			panic("unexpected value type")
 		}

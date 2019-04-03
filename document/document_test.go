@@ -122,3 +122,36 @@ func TestCellEmptyCellArithmetic(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "1", v)
 }
+
+func TestCellRangeRef(t *testing.T) {
+	d := NewWithEmptySheet()
+	d.CurrentSheet.AddStaticSegment(0, 0, 2, 2, [][]sheet.Cell{
+		{*sheet.NewCellUntyped("1"), *sheet.NewCellUntyped("3")},
+		{*sheet.NewCellUntyped("2"), *sheet.NewCellUntyped("4")},
+	})
+	d.CurrentSheet.SetCell(0, 2, sheet.NewCellUntyped("=SUM(A1:B2)"))
+
+	v, err := d.CurrentSheet.Cell(0, 2).StringValue(eval.NewContext(d, d.CurrentSheet.Idx))
+	assert.NoError(t, err)
+	assert.Equal(t, "10", v)
+}
+
+func TestCellRangeRefWithInvalidRange(t *testing.T) {
+	d := NewWithEmptySheet()
+	d.CurrentSheet.SetCell(0, 0, sheet.NewCellUntyped("=SUM(C2:B1)"))
+
+	_, err := d.CurrentSheet.Cell(0, 0).StringValue(eval.NewContext(d, d.CurrentSheet.Idx))
+	assert.EqualError(t, err, "invalid range")
+}
+
+func TestCellRangeRefWithCircularRef(t *testing.T) {
+	d := NewWithEmptySheet()
+	d.CurrentSheet.AddStaticSegment(0, 0, 2, 2, [][]sheet.Cell{
+		{*sheet.NewCellUntyped("1"), *sheet.NewCellUntyped("3")},
+		{*sheet.NewCellUntyped("2"), *sheet.NewCellUntyped("4")},
+	})
+	d.CurrentSheet.SetCell(0, 2, sheet.NewCellUntyped("=SUM(A1:B3)"))
+
+	_, err := d.CurrentSheet.Cell(0, 2).StringValue(eval.NewContext(d, d.CurrentSheet.Idx))
+	assert.EqualError(t, err, "circular reference")
+}

@@ -511,11 +511,21 @@ func trim(ec *eval.Context, args []eval.Value) (eval.Value, error) {
 func sum(ec *eval.Context, args []eval.Value) (eval.Value, error) {
 	s := decimal.Zero
 	for i := range args {
-		d, err := args[i].DecimalValue(ec)
-		if err != nil {
-			return eval.NewEmptyValue(), err
+		if rr, ok := args[i].(*eval.RangeRef); ok {
+			err := rr.IterateDecimalValues(ec, func(d decimal.Decimal) error {
+				s = s.Add(d)
+				return nil
+			})
+			if err != nil {
+				return eval.NewEmptyValue(), err
+			}
+		} else {
+			d, err := args[i].DecimalValue(ec)
+			if err != nil {
+				return eval.NewEmptyValue(), err
+			}
+			s = s.Add(d)
 		}
-		s = s.Add(d)
 	}
 	return eval.NewDecimalValue(s), nil
 }
