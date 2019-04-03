@@ -141,7 +141,16 @@ func TestCellRangeRefWithInvalidRange(t *testing.T) {
 	d.CurrentSheet.SetCell(0, 0, sheet.NewCellUntyped("=SUM(C2:B1)"))
 
 	_, err := d.CurrentSheet.Cell(0, 0).StringValue(eval.NewContext(d, d.CurrentSheet.Idx))
-	assert.EqualError(t, err, "invalid range")
+	assert.EqualError(t, err, "invalid range bounds")
+}
+
+func TestCellRangeRefWithCrossSheetsRange(t *testing.T) {
+	d := NewWithEmptySheet()
+	d.NewSheet("")
+	d.CurrentSheet.SetCell(0, 0, sheet.NewCellUntyped("=SUM(Sheet1!A2:Sheet2!B3)"))
+
+	_, err := d.CurrentSheet.Cell(0, 0).StringValue(eval.NewContext(d, d.CurrentSheet.Idx))
+	assert.EqualError(t, err, "cross-sheets ranges are not allowed")
 }
 
 func TestCellRangeRefWithCircularRef(t *testing.T) {

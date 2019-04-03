@@ -26,9 +26,14 @@ func (r *RangeRef) StringValue(ec *Context) (string, error) {
 }
 
 func (r *RangeRef) iterate(ec *Context, f func(Cell) error) error {
+	sheetIdx := r.CellFromRef.Cell.SheetIdx
+	if sheetIdx != r.CellToRef.Cell.SheetIdx {
+		// cross-sheets ranges are not allowed
+		return NewError(ErrorKindRef, "cross-sheets ranges are not allowed")
+	}
 	x1, y1, x2, y2 := r.CellFromRef.Cell.X, r.CellFromRef.Cell.Y, r.CellToRef.Cell.X, r.CellToRef.Cell.Y
 	if x1 > x2 || y1 > y2 {
-		return NewError(ErrorKindRef, "invalid range")
+		return NewError(ErrorKindRef, "invalid range bounds")
 	}
 	for x := x1; x <= x2; x++ {
 		for y := y1; y <= y2; y++ {

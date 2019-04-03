@@ -6,7 +6,7 @@ import (
 
 type RefRegistryInterface interface {
 	NewCellRef(sheetTitle, cellName string) (*CellRef, error)
-	NewRangeRef(sheetTitle, cellFromName, cellToName string) (*RangeRef, error)
+	NewRangeRef(sheetFromTitle, cellFromName, sheetToTitle, cellToName string) (*RangeRef, error)
 	SheetTitle(sheetIdx int) (string, error)
 	CellName(cell Cell) (string, error)
 	Value(ec *Context, cell Cell) (Value, error)

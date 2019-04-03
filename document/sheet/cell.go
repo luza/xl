@@ -243,20 +243,25 @@ func guessCellType(v string) (int, interface{}) {
 func makeRefs(vars []*formula.Variable, ec *eval.Context) ([]eval.Value, error) {
 	values := make([]eval.Value, len(vars))
 	for i := range vars {
-		c := vars[i].Cell
+		cell := vars[i].Cell
 		var s string
-		if c.Sheet != nil {
-			s = string(*c.Sheet)
+		if cell.Sheet != nil {
+			s = string(*cell.Sheet)
 		}
 		if vars[i].CellTo != nil {
+			cellTo := vars[i].CellTo
 			// range
-			ref, err := ec.DataProvider.NewRangeRef(s, c.Cell, vars[i].CellTo.Cell)
+			var sheetTo string
+			if cellTo.Sheet != nil {
+				sheetTo = string(*cellTo.Sheet)
+			}
+			ref, err := ec.DataProvider.NewRangeRef(s, cell.Cell, sheetTo, cellTo.Cell)
 			if err != nil {
 				return nil, err
 			}
 			values[i] = ref
 		} else {
-			ref, err := ec.DataProvider.NewCellRef(s, c.Cell)
+			ref, err := ec.DataProvider.NewCellRef(s, cell.Cell)
 			if err != nil {
 				return nil, err
 			}

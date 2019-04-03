@@ -40,12 +40,12 @@ func (d *Document) NewCellRef(sheetTitle, cellName string) (*eval.CellRef, error
 	return r, nil
 }
 
-func (d *Document) NewRangeRef(sheetTitle, cellFromName, cellToName string) (*eval.RangeRef, error) {
-	fromRef, err := d.NewCellRef(sheetTitle, cellFromName)
+func (d *Document) NewRangeRef(sheetFromTitle, cellFromName, sheetToTitle, cellToName string) (*eval.RangeRef, error) {
+	fromRef, err := d.NewCellRef(sheetFromTitle, cellFromName)
 	if err != nil {
 		return nil, err
 	}
-	toRef, err := d.NewCellRef(sheetTitle, cellToName)
+	toRef, err := d.NewCellRef(sheetToTitle, cellToName)
 	if err != nil {
 		return nil, err
 	}

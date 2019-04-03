@@ -33,7 +33,7 @@ func New() *Document {
 }
 
 func NewWithEmptySheet() *Document {
-	s := sheet.New(1, "Sheet 1")
+	s := sheet.New(1, "Sheet1")
 	return &Document{
 		Sheets:        []*sheet.Sheet{s},
 		CurrentSheet:  s,
@@ -58,7 +58,7 @@ func (d *Document) NewSheet(title string) (*sheet.Sheet, error) {
 			}
 		}
 	} else {
-		title = fmt.Sprintf("Sheet %d", d.maxSheetIdx+1)
+		title = fmt.Sprintf("Sheet%d", d.maxSheetIdx+1)
 	}
 	s := sheet.New(d.maxSheetIdx+1, title)
 	d.Sheets = append(d.Sheets, s)
