@@ -11,7 +11,7 @@ import (
 
 func (t *Termbox) enterEditorMode(config *editorConfig) (string, error) {
 	defer func() {
-		t.Screen.ShowCursor(t.lastCursorX, t.lastCursorY)
+		t.screen.ShowCursor(t.lastCursorX, t.lastCursorY)
 	}()
 	e := newEditor(config)
 	for {
@@ -364,14 +364,14 @@ func (e *editor) redraw() {
 		e.config.Tbox.drawCell(e.config.X, y, e.config.Width, 1, text, e.config.FgColor, e.config.BgColor)
 		if line != nil {
 			if line == e.cursor.line {
-				e.config.Tbox.Screen.ShowCursor(e.config.X+e.cursor.offsetRunes-e.window.firstRune, y)
+				e.config.Tbox.screen.ShowCursor(e.config.X+e.cursor.offsetRunes-e.window.firstRune, y)
 			}
 			// advance to next line
 			line = line.next
 		}
 		y++
 	}
-	e.config.Tbox.Screen.Show()
+	e.config.Tbox.screen.Show()
 }
 
 func (e *editor) adjustWindow() {

@@ -1,11 +1,10 @@
 package main
 
 import (
+	"flag"
 	"xl/app"
 	"xl/log"
 	"xl/ui/termbox"
-
-	"flag"
 
 	"go.uber.org/zap"
 )
@@ -22,10 +21,8 @@ func main() {
 	t := termbox.New()
 	defer t.Close()
 
-	logger.Info("Colors support", zap.Int("Count colors", t.Screen.Colors()))
-
 	a := app.New(&app.Config{
-		Screen: t.GetScreen(),
+		Screen: t.Screen(),
 		Logger: logger,
 		Input:  t.Input(),
 		Output: t.Output(),

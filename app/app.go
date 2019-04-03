@@ -23,7 +23,7 @@ const (
 
 type App struct {
 	ui.DataDelegateInterface
-	Screen  tcell.Screen
+	screen  tcell.Screen
 	logger  *zap.Logger
 	input   ui.InputInterface
 	output  ui.OutputInterface
@@ -44,7 +44,7 @@ type Config struct {
 
 func New(config *Config) *App {
 	a := &App{
-		Screen:  config.Screen,
+		screen:  config.Screen,
 		logger:  config.Logger,
 		input:   config.Input,
 		output:  config.Output,
@@ -100,11 +100,11 @@ func (a *App) WriteAs(filename string) error {
 // Loop is the main loop, reads and processes key presses.
 func (a *App) Loop() {
 	for {
-		ev := a.Screen.PollEvent()
+		ev := a.screen.PollEvent()
 		switch ev := ev.(type) {
 		case *tcell.EventKey:
 			e := ui.KeyEvent{
-				
+
 				Mod: ev.Modifiers(),
 				Key: ev.Key(),
 				Ch:  ev.Rune(),

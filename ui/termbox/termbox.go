@@ -9,7 +9,7 @@ import (
 type Termbox struct {
 	ui.InputInterface
 	ui.OutputInterface
-	Screen       tcell.Screen
+	screen       tcell.Screen
 	dataDelegate ui.DataDelegateInterface
 
 	// Value of termbox.Size()
@@ -44,10 +44,9 @@ func New() *Termbox {
 	} else if e = s.Init(); e != nil {
 		panic(e)
 	}
-
 	width, height := s.Size()
 	return &Termbox{
-		Screen:       s,
+		screen:       s,
 		screenWidth:  width,
 		screenHeight: height,
 		dirty:        ui.DirtyHRuler | ui.DirtyVRuler | ui.DirtyGrid | ui.DirtyFormulaLine | ui.DirtyStatusLine,
@@ -55,11 +54,11 @@ func New() *Termbox {
 }
 
 func (t *Termbox) Close() {
-	t.Screen.Fini()
+	t.screen.Fini()
 }
 
-func (t *Termbox) GetScreen() tcell.Screen {
-	return t.Screen
+func (t *Termbox) Screen() tcell.Screen {
+	return t.screen
 }
 
 func (t *Termbox) Input() ui.InputInterface {

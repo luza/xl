@@ -112,20 +112,16 @@ func (t *Termbox) RefreshView() {
 				if cellX%2 != 0 && cellY%2 == 0 {
 					bgColor = colorGrey239
 				}
-
 				if cellX == sheetView.Cursor.X && cellY == sheetView.Cursor.Y {
 					t.lastCursorX = screenX
 					t.lastCursorY = screenY
-					t.Screen.ShowCursor(screenX, screenY)
+					t.screen.ShowCursor(screenX, screenY)
 				}
-
 				if c.Error != nil {
 					text = *c.Error
 					bgColor = colorRed
 				}
-
 				t.drawCell(screenX, screenY, widthChars, heightChars, text, colorGrey, bgColor)
-
 				cellX++
 				screenX += widthChars
 			}
@@ -155,16 +151,13 @@ func (t *Termbox) RefreshView() {
 		}
 		t.drawCell(screenX, screenY, t.screenWidth-screenX, statusLineHeight, t.statusMessage, fgColor, bgColor)
 	}
-
 	t.dirty = 0
-	t.Screen.Show()
+	t.screen.Show()
 }
 
 func (t *Termbox) drawCell(x int, y int, width int, height int, text string, fg tcell.Color, bg tcell.Color) {
-
 	var st tcell.Style
 	st = st.Background(bg)
-
 	textAsRunes := []rune(text)
 	textLen := len(textAsRunes)
 	for cursorY := y; cursorY < y+height; cursorY++ {
@@ -180,7 +173,7 @@ func (t *Termbox) drawCell(x int, y int, width int, height int, text string, fg 
 					char = textAsRunes[indexX]
 				}
 			}
-			t.Screen.SetContent(cursorX, cursorY, char, nil, st)
+			t.screen.SetContent(cursorX, cursorY, char, nil, st)
 			indexX++
 		}
 	}

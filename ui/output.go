@@ -30,7 +30,7 @@ type OutputInterface interface {
 	InputCommand() (string, error)
 	EditCellValue(string) (string, error)
 	SetStatus(string, int)
-	GetScreen() tcell.Screen
+	Screen() tcell.Screen
 }
 
 type DataDelegateInterface interface {

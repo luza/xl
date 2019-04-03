@@ -10,7 +10,7 @@ import (
 
 // ReadKey blocks until new key is read. Returns the key read.
 func (t *Termbox) ReadKey() (ui.InputEventInterface, error) {
-	ev := t.Screen.PollEvent()
+	ev := t.screen.PollEvent()
 	switch ev := ev.(type) {
 	case *tcell.EventKey:
 		e := ui.KeyEvent{
@@ -32,7 +32,7 @@ func (t *Termbox) ReadKey() (ui.InputEventInterface, error) {
 }
 
 func (t *Termbox) EditCellValue(oldValue string) (string, error) {
-	w, _ := t.Screen.Size()
+	w, _ := t.screen.Size()
 	v, err := t.enterEditorMode(&editorConfig{
 		Tbox:     t,
 		X:        0,
@@ -51,7 +51,7 @@ func (t *Termbox) EditCellValue(oldValue string) (string, error) {
 }
 
 func (t *Termbox) InputCommand() (string, error) {
-	w, h := t.Screen.Size()
+	w, h := t.screen.Size()
 	t.drawCell(0, h-statusLineHeight, 1, statusLineHeight, ":", colorWhite, colorBlack)
 	v, err := t.enterEditorMode(&editorConfig{
 		Tbox:     t,
