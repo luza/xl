@@ -1,12 +1,15 @@
 package termbox
 
-const (
-	colorGrey   = 8
-	colorRed    = 10
-	colorYellow = 12
-	colorWhite  = 16
-	colorBlack  = 17
+import (
+	"github.com/gdamore/tcell"
+)
 
-	colorGrey236 = 236
-	colorGrey239 = 239
+var (
+	colorGrey    = tcell.ColorGray
+	colorRed     = tcell.ColorRed
+	colorYellow  = tcell.ColorYellow
+	colorWhite   = tcell.ColorWhite
+	colorBlack   = tcell.ColorBlack
+	colorGrey236 = tcell.Color236
+	colorGrey239 = tcell.Color239
 )

@@ -7,12 +7,11 @@ import (
 	"unicode/utf8"
 
 	"github.com/gdamore/tcell"
-	"github.com/gdamore/tcell/termbox"
 )
 
 func (t *Termbox) enterEditorMode(config *editorConfig) (string, error) {
 	defer func() {
-		termbox.SetCursor(t.lastCursorX, t.lastCursorY)
+		t.screen.ShowCursor(t.lastCursorX, t.lastCursorY)
 	}()
 	e := newEditor(config)
 	for {
@@ -37,6 +36,7 @@ type ResizeEventDelegateInterface interface {
 }
 
 type editorConfig struct {
+	Tbox                *Termbox
 	X                   int
 	Y                   int
 	Width               int
@@ -44,8 +44,8 @@ type editorConfig struct {
 	MaxRunes            int
 	MaxLines            int
 	ResizeEventDelegate ResizeEventDelegateInterface
-	FgColor             int
-	BgColor             int
+	FgColor             tcell.Color
+	BgColor             tcell.Color
 	Value               string
 }
 
@@ -360,17 +360,17 @@ func (e *editor) redraw() {
 		if line != nil && e.window.firstRune < len(string(line.data)) {
 			text = string(line.data)[e.window.firstRune:]
 		}
-		drawCell(e.config.X, y, e.config.Width, 1, text, e.config.FgColor, e.config.BgColor)
+		e.config.Tbox.drawCell(e.config.X, y, e.config.Width, 1, text, e.config.FgColor, e.config.BgColor)
 		if line != nil {
 			if line == e.cursor.line {
-				termbox.SetCursor(e.config.X+e.cursor.offsetRunes-e.window.firstRune, y)
+				e.config.Tbox.screen.ShowCursor(e.config.X+e.cursor.offsetRunes-e.window.firstRune, y)
 			}
 			// advance to next line
 			line = line.next
 		}
 		y++
 	}
-	_ = termbox.Flush()
+	e.config.Tbox.screen.Show()
 }
 
 func (e *editor) adjustWindow() {

@@ -3,6 +3,8 @@ package ui
 import (
 	"xl/document/sheet"
 	"xl/formula"
+
+	"github.com/gdamore/tcell"
 )
 
 const (
@@ -28,6 +30,7 @@ type OutputInterface interface {
 	InputCommand() (string, error)
 	EditCellValue(string) (string, error)
 	SetStatus(string, int)
+	Screen() tcell.Screen
 }
 
 type DataDelegateInterface interface {

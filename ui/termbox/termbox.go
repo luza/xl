@@ -3,7 +3,7 @@ package termbox
 import (
 	"xl/ui"
 
-	"github.com/gdamore/tcell/termbox"
+	"github.com/gdamore/tcell"
 )
 
 type Termbox struct {
@@ -11,6 +11,9 @@ type Termbox struct {
 	ui.OutputInterface
 
 	dataDelegate ui.DataDelegateInterface
+
+	// Screen object
+	screen tcell.Screen
 
 	// Value of termbox.Size()
 	screenWidth  int
@@ -36,13 +39,17 @@ type Termbox struct {
 }
 
 func New() *Termbox {
-	err := termbox.Init()
-	if err != nil {
-		panic(err)
+	tcell.SetEncodingFallback(tcell.EncodingFallbackASCII)
+	var s tcell.Screen
+	var e error
+	if s, e = tcell.NewScreen(); e != nil {
+		panic(e)
+	} else if e = s.Init(); e != nil {
+		panic(e)
 	}
-	termbox.SetOutputMode(termbox.Output256)
-	width, height := termbox.Size()
+	width, height := s.Size()
 	return &Termbox{
+		screen:       s,
 		screenWidth:  width,
 		screenHeight: height,
 		dirty:        ui.DirtyHRuler | ui.DirtyVRuler | ui.DirtyGrid | ui.DirtyFormulaLine | ui.DirtyStatusLine,
@@ -50,7 +57,11 @@ func New() *Termbox {
 }
 
 func (t *Termbox) Close() {
-	termbox.Close()
+	t.screen.Fini()
+}
+
+func (t *Termbox) Screen() tcell.Screen {
+	return t.screen
 }
 
 func (t *Termbox) Input() ui.InputInterface {

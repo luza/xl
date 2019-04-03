@@ -24,6 +24,7 @@ func main() {
 	defer t.Close()
 
 	a := app.New(&app.Config{
+		Screen: t.Screen(),
 		Logger: logger,
 		Input:  t.Input(),
 		Output: t.Output(),
