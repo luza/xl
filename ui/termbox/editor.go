@@ -146,7 +146,7 @@ func (e *editor) OnKey(ev ui.KeyEvent) bool {
 		e.insertRune('\t')
 	// case tcell.KeyCtrlSpace:
 	// 	if ev.Ch == 0 {
-	// 		//v.set_mark()
+	// 		v.set_mark()
 	// 	}
 	case tcell.KeyCtrlW:
 		//v.on_vcommand(vcommand_kill_region, 0)
@@ -217,7 +217,6 @@ func (e *editor) deleteRuneBackward() {
 		if e.bof() {
 			return
 		}
-
 		// If cursor at beginning of line, connects current line to the end of previous.
 		e.cursor.offsetBytes = len(line.prev.data)
 		e.cursor.offsetRunes = utf8.RuneCountInString(string(line.prev.data))
