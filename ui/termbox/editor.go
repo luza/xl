@@ -134,7 +134,6 @@ func (e *editor) OnKey(ev ui.KeyEvent) bool {
 			//e.deleteWordBackward()
 		} else {
 			e.deleteRuneBackward()
-			ev.Ch = 0
 		}
 	case tcell.KeyDelete, tcell.KeyCtrlD:
 		e.deleteRune()
@@ -155,10 +154,10 @@ func (e *editor) OnKey(ev ui.KeyEvent) bool {
 	case tcell.KeyEsc:
 		// edit editor, discard changes
 		return true
-	}
-
-	if ev.Ch != 0 {
-		e.insertRune(ev.Ch)
+	default:
+		if ev.Ch != 0 {
+			e.insertRune(ev.Ch)
+		}
 	}
 
 	e.redraw()
