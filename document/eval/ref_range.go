@@ -1,42 +1,78 @@
 package eval
 
-type rangeRef struct {
+import "github.com/shopspring/decimal"
+
+type RangeRef struct {
 	Value
 
-	SheetIdx int
-	CellFrom Axis
-	CellTo   Axis
+	CellFromRef *CellRef
+	CellToRef   *CellRef
 }
 
-//func (r *cellRef) BoolValue(ec *eval.Context) (bool, error) {
-//	//if r.CellTo != nil {
-//	//	return false, NewError(ErrorKindCasting, "unable to cast range to bool")
-//	//}
-//	if ec.Visited(r) {
-//		return false, eval.NewError(eval.ErrorKindRef, "circular reference")
-//	}
-//	ec.AddVisited(r)
-//	return ec.LinkRegistry.BoolValue(ec, r.SheetIdx, r.Cell.X, r.Cell.Y)
-//}
-//
-//func (r *cellRef) DecimalValue(ec *eval.Context) (decimal.Decimal, error) {
-//	//if r.CellTo != nil {
-//	//	return decimal.Zero, NewError(ErrorKindCasting, "unable to cast range to decimal")
-//	//}
-//	if ec.Visited(r) {
-//		return decimal.Zero, eval.NewError(eval.ErrorKindRef, "circular reference")
-//	}
-//	ec.AddVisited(r)
-//	return ec.LinkRegistry.DecimalValue(ec, r.SheetIdx, r.Cell.X, r.Cell.Y)
-//}
-//
-//func (r *cellRef) StringValue(ec *eval.Context) (string, error) {
-//	//if r.CellTo != nil {
-//	//	return "", NewError(ErrorKindCasting, "unable to cast range to string")
-//	//}
-//	if ec.Visited(r) {
-//		return "", eval.NewError(eval.ErrorKindRef, "circular reference")
-//	}
-//	ec.AddVisited(r)
-//	return ec.LinkRegistry.StringValue(ec, r.SheetIdx, r.Cell.X, r.Cell.Y)
-//}
+func (r *RangeRef) Type(*Context) (int, error) {
+	return 0, NewError(ErrorKindCasting, "unable to get type for a range")
+}
+
+func (r *RangeRef) BoolValue(ec *Context) (bool, error) {
+	return false, NewError(ErrorKindCasting, "unable to cast range to bool")
+}
+
+func (r *RangeRef) DecimalValue(ec *Context) (decimal.Decimal, error) {
+	return decimal.Zero, NewError(ErrorKindCasting, "unable to cast range to decimal")
+}
+
+func (r *RangeRef) StringValue(ec *Context) (string, error) {
+	return "", NewError(ErrorKindCasting, "unable to cast range to string")
+}
+
+func (r *RangeRef) iterate(ec *Context, f func(Cell) error) error {
+	x1, y1, x2, y2 := r.CellFromRef.Cell.X, r.CellFromRef.Cell.Y, r.CellToRef.Cell.X, r.CellToRef.Cell.Y
+	if x1 > x2 || y1 > y2 {
+		return NewError(ErrorKindRef, "invalid range")
+	}
+	for x := x1; x <= x2; x++ {
+		for y := y1; y <= y2; y++ {
+			cell := Cell{SheetIdx: r.CellFromRef.Cell.SheetIdx, X: x, Y: y}
+			if ec.Visited(cell) {
+				return NewError(ErrorKindRef, "circular reference")
+			}
+			l := ec.AddVisited(cell)
+			err := f(cell)
+			ec.ResetVisited(l)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func (r *RangeRef) IterateBoolValues(ec *Context, f func(bool) error) error {
+	return r.iterate(ec, func(cell Cell) error {
+		v, err := ec.DataProvider.BoolValue(ec, cell)
+		if err != nil {
+			return err
+		}
+		return f(v)
+	})
+}
+
+func (r *RangeRef) IterateDecimalValues(ec *Context, f func(decimal.Decimal) error) error {
+	return r.iterate(ec, func(cell Cell) error {
+		v, err := ec.DataProvider.DecimalValue(ec, cell)
+		if err != nil {
+			return err
+		}
+		return f(v)
+	})
+}
+
+func (r *RangeRef) IterateStringValues(ec *Context, f func(string) error) error {
+	return r.iterate(ec, func(cell Cell) error {
+		v, err := ec.DataProvider.StringValue(ec, cell)
+		if err != nil {
+			return err
+		}
+		return f(v)
+	})
+}
