@@ -143,10 +143,10 @@ func (e *editor) OnKey(ev ui.KeyEvent) bool {
 		//v.on_vcommand(vcommand_move_view_half_backward, 0)
 	case tcell.KeyTab:
 		e.insertRune('\t')
-	//case termbox.KeyCtrlSpace:
-	//if ev.Ch == 0 {
-	//	v.set_mark()
-	//}
+	// case tcell.KeyCtrlSpace:
+	// 	if ev.Ch == 0 {
+	// 		v.set_mark()
+	// 	}
 	case tcell.KeyCtrlW:
 		//v.on_vcommand(vcommand_kill_region, 0)
 	case tcell.KeyCtrlY:
@@ -154,10 +154,10 @@ func (e *editor) OnKey(ev ui.KeyEvent) bool {
 	case tcell.KeyEsc:
 		// edit editor, discard changes
 		return true
-	}
-
-	if ev.Ch != 0 {
-		e.insertRune(ev.Ch)
+	default:
+		if ev.Ch != 0 {
+			e.insertRune(ev.Ch)
+		}
 	}
 
 	e.redraw()
