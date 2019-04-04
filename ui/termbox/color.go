@@ -5,7 +5,7 @@ import (
 )
 
 var (
-	colorGrey    = tcell.ColorGray
+	colorGrey    = tcell.ColorLightGray
 	colorRed     = tcell.ColorRed
 	colorYellow  = tcell.ColorYellow
 	colorWhite   = tcell.ColorWhite

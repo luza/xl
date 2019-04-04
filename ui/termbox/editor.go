@@ -134,6 +134,7 @@ func (e *editor) OnKey(ev ui.KeyEvent) bool {
 			//e.deleteWordBackward()
 		} else {
 			e.deleteRuneBackward()
+			ev.Ch = 0
 		}
 	case tcell.KeyDelete, tcell.KeyCtrlD:
 		e.deleteRune()
@@ -143,10 +144,10 @@ func (e *editor) OnKey(ev ui.KeyEvent) bool {
 		//v.on_vcommand(vcommand_move_view_half_backward, 0)
 	case tcell.KeyTab:
 		e.insertRune('\t')
-	//case termbox.KeyCtrlSpace:
-	//if ev.Ch == 0 {
-	//	v.set_mark()
-	//}
+	// case tcell.KeyCtrlSpace:
+	// 	if ev.Ch == 0 {
+	// 		//v.set_mark()
+	// 	}
 	case tcell.KeyCtrlW:
 		//v.on_vcommand(vcommand_kill_region, 0)
 	case tcell.KeyCtrlY:
@@ -216,6 +217,7 @@ func (e *editor) deleteRuneBackward() {
 		if e.bof() {
 			return
 		}
+
 		// If cursor at beginning of line, connects current line to the end of previous.
 		e.cursor.offsetBytes = len(line.prev.data)
 		e.cursor.offsetRunes = utf8.RuneCountInString(string(line.prev.data))
