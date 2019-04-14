@@ -1,21 +1,18 @@
 package formula
 
 import (
-	"strings"
-
 	"xl/document/eval"
+
+	"strings"
 
 	"github.com/shopspring/decimal"
 )
 
 func evalOperator(ec *eval.Context, op string, args ...eval.Value) (eval.Value, error) {
+	var err error
 	v := eval.NewEmptyValue()
-	t, err := args[0].Type(ec)
-	if err != nil {
-		return v, err
-	}
 	// all operands is being casted to first operand type
-	switch t {
+	switch args[0].Type() {
 	case eval.TypeBool:
 		argsBool := make([]bool, len(args))
 		for i := range args {
@@ -46,6 +43,14 @@ func evalOperator(ec *eval.Context, op string, args ...eval.Value) (eval.Value, 
 		if v, err = evalStringOperator(op, argsString); err != nil {
 			return v, err
 		}
+	case eval.TypeRef:
+		args[0], err = ec.DataProvider.Value(ec, args[0].Cell().CellAddress)
+		if err != nil {
+			return v, err
+		}
+		return evalOperator(ec, op, args...)
+	case eval.TypeRangeRef:
+		return v, eval.NewError(eval.ErrorKindCasting, "arithmetic on range")
 	default:
 		panic("unsupported type")
 	}

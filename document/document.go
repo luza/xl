@@ -23,10 +23,10 @@ type Document struct {
 	maxSheetIdx int
 
 	eval.RefRegistryInterface
-	refRegistry []*eval.CellRef
+	refRegistry []eval.CellReference
 }
 
-var cellNamePattern = regexp.MustCompile(`^\$?([A-Z]+)\$?([0-9]+)$`)
+var cellNamePattern = regexp.MustCompile(`^(\$?)([A-Z]+)(\$?)([0-9]+)$`)
 
 func New() *Document {
 	return &Document{}
@@ -95,7 +95,8 @@ func (d *Document) DeleteCol() {
 // FindCell finds position of the cell with given name.
 func (d *Document) FindCell(cellName string) (int, int, error) {
 	// TODO: accept sheet name in request
-	return CellAxis(cellName)
+	x, y, _, _, err := CellAxis(cellName)
+	return x, y, err
 }
 
 // sheetByIdx returns sheet by its index.
@@ -109,12 +110,13 @@ func (d *Document) sheetByIdx(idx int) *sheet.Sheet {
 }
 
 // CellAxis transforms cell name into X, Y coordinates.
-func CellAxis(name string) (int, int, error) {
+// TODO: support sheet title
+func CellAxis(name string) (int, int, bool, bool, error) {
 	res := cellNamePattern.FindStringSubmatch(name)
 	if len(res) < 3 {
-		return 0, 0, eval.NewError(eval.ErrorKindName, "malformed cell name")
+		return 0, 0, false, false, eval.NewError(eval.ErrorKindName, "malformed cell name")
 	}
-	col, row := res[1], res[2]
+	col, row := res[2], res[4]
 	x, p := 0, 1
 	for c := len(col) - 1; c >= 0; c-- {
 		x += int(col[c]-'A'+1) * p
@@ -122,9 +124,9 @@ func CellAxis(name string) (int, int, error) {
 	}
 	y, _ := strconv.Atoi(row)
 	if x < 1 || y < 1 {
-		return 0, 0, eval.NewError(eval.ErrorKindName, "malformed cell name")
+		return 0, 0, false, false, eval.NewError(eval.ErrorKindName, "malformed cell name")
 	}
-	return x - 1, y - 1, nil
+	return x - 1, y - 1, res[1] != "", res[3] != "", nil
 }
 
 // CellName returns name for cell under given X and Y.

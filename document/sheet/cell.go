@@ -31,7 +31,7 @@ type Cell struct {
 
 	// formula params
 	expression *formula.Expression
-	refs       []eval.Value
+	refs       []ref
 }
 
 func NewCellEmpty() *Cell {
@@ -44,15 +44,6 @@ func NewCellUntyped(v string) *Cell {
 	c := &Cell{}
 	c.SetValueUntyped(v)
 	return c
-}
-
-func (c *Cell) Free() {
-	for _, r := range c.refs {
-		switch r := r.(type) {
-		case *eval.CellRef:
-			r.UsageCount--
-		}
-	}
 }
 
 // EraseValue resets cell value to initial.
@@ -105,7 +96,7 @@ func (c *Cell) BoolValue(ec *eval.Context) (bool, error) {
 	case CellValueTypeBool:
 		return c.boolValue, nil
 	case CellValueTypeFormula:
-		val, err := c.formulaValue(ec, c.refs)
+		val, err := c.formulaValue(ec, refsToValues(c.refs))
 		if err != nil {
 			return false, err
 		}
@@ -133,7 +124,7 @@ func (c *Cell) DecimalValue(ec *eval.Context) (decimal.Decimal, error) {
 	case CellValueTypeBool:
 		return decimal.Zero, eval.NewError(eval.ErrorKindCasting, "unable to cast bool to decimal")
 	case CellValueTypeFormula:
-		val, err := c.formulaValue(ec, c.refs)
+		val, err := c.formulaValue(ec, refsToValues(c.refs))
 		if err != nil {
 			return decimal.Zero, err
 		}
@@ -150,7 +141,7 @@ func (c *Cell) StringValue(ec *eval.Context) (string, error) {
 		}
 	}
 	if c.valueType == CellValueTypeFormula {
-		val, err := c.formulaValue(ec, c.refs)
+		val, err := c.formulaValue(ec, refsToValues(c.refs))
 		if err != nil {
 			return "", err
 		}
@@ -177,7 +168,7 @@ func (c *Cell) Value(ec *eval.Context) (eval.Value, error) {
 	case CellValueTypeBool:
 		return eval.NewBoolValue(c.boolValue), nil
 	case CellValueTypeFormula:
-		return c.formulaValue(ec, c.refs)
+		return c.formulaValue(ec, refsToValues(c.refs))
 	}
 	panic("unsupported type")
 }
@@ -210,7 +201,7 @@ func (c *Cell) evaluateType(ec *eval.Context) error {
 		c.formulaValue, _ = expr.BuildFunc()
 		c.expression = expr
 		c.rawValue = expr.String() // need this?
-		c.refs, err = makeRefs(expr.Variables(), ec)
+		c.refs, err = makeRefs(ec, expr.Variables())
 		if err != nil {
 			return err
 		}
@@ -238,62 +229,4 @@ func guessCellType(v string) (int, interface{}) {
 		}
 	}
 	return CellValueTypeText, v
-}
-
-func makeRefs(vars []*formula.Variable, ec *eval.Context) ([]eval.Value, error) {
-	values := make([]eval.Value, len(vars))
-	for i := range vars {
-		cell := vars[i].Cell
-		var s string
-		if cell.Sheet != nil {
-			s = string(*cell.Sheet)
-		}
-		if vars[i].CellTo != nil {
-			cellTo := vars[i].CellTo
-			// range
-			var sheetTo string
-			if cellTo.Sheet != nil {
-				sheetTo = string(*cellTo.Sheet)
-			}
-			ref, err := ec.DataProvider.NewRangeRef(s, cell.Cell, sheetTo, cellTo.Cell)
-			if err != nil {
-				return nil, err
-			}
-			values[i] = ref
-		} else {
-			ref, err := ec.DataProvider.NewCellRef(s, cell.Cell)
-			if err != nil {
-				return nil, err
-			}
-			values[i] = ref
-		}
-	}
-	return values, nil
-}
-
-func updateVars(ec *eval.Context, x *formula.Expression, refs []eval.Value) error {
-	for i, v := range x.Variables() {
-		switch r := refs[i].(type) {
-		case *eval.CellRef:
-			v.Cell.Sheet = nil
-			if r.Cell.SheetIdx != ec.CurrentSheetIdx {
-				sheetTitle, err := ec.DataProvider.SheetTitle(r.Cell.SheetIdx)
-				if err != nil {
-					return err
-				}
-				s := formula.Sheet(sheetTitle)
-				v.Cell.Sheet = &s
-			}
-			cellName, err := ec.DataProvider.CellName(r.Cell)
-			if err != nil {
-				return err
-			}
-			v.Cell.Cell = cellName
-		case *eval.RangeRef:
-			// TODO
-		default:
-			panic("unexpected value type")
-		}
-	}
-	return nil
 }

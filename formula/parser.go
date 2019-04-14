@@ -114,8 +114,8 @@ type Variable struct {
 }
 
 type Cell struct {
-	Sheet *Sheet `[ @Sheet ]`
-	Cell  string `@cell`
+	Sheet    *Sheet `[ @Sheet ]`
+	CellName string `@CellName`
 }
 
 var lex = lexer.Must(lexer.Regexp(
@@ -127,7 +127,7 @@ var lex = lexer.Must(lexer.Regexp(
 		`|(?P<Boolean>(?i)TRUE|FALSE)` +
 		`|(?P<FuncName>[A-Za-z][A-Za-z0-9\.]+)\(` +
 		`|(?P<Sheet>[A-Za-z0-9_]+|'([^']|'')*')!` +
-		`|(?P<cell>\$?[A-Za-z]+\$?[1-9][0-9]*)`,
+		`|(?P<CellName>\$?[A-Za-z]+\$?[1-9][0-9]*)`,
 ))
 
 // Parse parses the formula, extracts variables from it and builds
@@ -138,7 +138,7 @@ func Parse(source string) (*Expression, error) {
 		&Expression{},
 		participle.Lexer(lex),
 		participle.CaseInsensitive("Boolean"),
-		participle.Upper("cell"),
+		participle.Upper("CellName"),
 	)
 	if err != nil {
 		panic(err)

@@ -126,5 +126,5 @@ func (e *Cell) Output(of OutputFunc) {
 		of("'", OutputTypeSymbol)
 		of("!", OutputTypeSymbol)
 	}
-	of(e.Cell, OutputTypeCell)
+	of(e.CellName, OutputTypeCell)
 }

@@ -511,11 +511,16 @@ func trim(ec *eval.Context, args []eval.Value) (eval.Value, error) {
 func sum(ec *eval.Context, args []eval.Value) (eval.Value, error) {
 	s := decimal.Zero
 	for i := range args {
-		if rr, ok := args[i].(*eval.RangeRef); ok {
-			err := rr.IterateDecimalValues(ec, func(d decimal.Decimal) error {
-				s = s.Add(d)
-				return nil
-			})
+		if args[i].Type() == eval.TypeRangeRef {
+			err := ec.DataProvider.IterateDecimalValues(
+				ec,
+				args[i].Cell().CellAddress,
+				args[i].CellTo().CellAddress,
+				func(d decimal.Decimal) error {
+					s = s.Add(d)
+					return nil
+				},
+			)
 			if err != nil {
 				return eval.NewEmptyValue(), err
 			}

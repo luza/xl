@@ -81,8 +81,8 @@ func TestParseErrors(t *testing.T) {
 		f   string
 		err string
 	}{
-		{`=`, `<source>:1:1: unexpected "<EOF>" (expected <cell>)`},
-		{`=()`, `<source>:1:3: unexpected ")" (expected <cell>)`},
+		{`=`, `<source>:1:1: unexpected "<EOF>" (expected <cellname>)`},
+		{`=()`, `<source>:1:3: unexpected ")" (expected <cellname>)`},
 		{`=1+`, `<source>:1:3: unexpected token "+"`},
 	}
 	for _, c := range testCases {

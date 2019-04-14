@@ -4,13 +4,27 @@ import (
 	"github.com/shopspring/decimal"
 )
 
+type CellAddress struct {
+	SheetIdx int
+	X        int
+	Y        int
+}
+
+type CellReference struct {
+	CellAddress
+	AnchoredX bool
+	AnchoredY bool
+}
+
 type RefRegistryInterface interface {
-	NewCellRef(sheetTitle, cellName string) (*CellRef, error)
-	NewRangeRef(sheetFromTitle, cellFromName, sheetToTitle, cellToName string) (*RangeRef, error)
-	SheetTitle(sheetIdx int) (string, error)
-	CellName(cell Cell) (string, error)
-	Value(ec *Context, cell Cell) (Value, error)
-	BoolValue(ec *Context, cell Cell) (bool, error)
-	DecimalValue(ec *Context, cell Cell) (decimal.Decimal, error)
-	StringValue(ec *Context, cell Cell) (string, error)
+	AddRef(cell CellReference)
+	FromAddress(cell CellReference) (string, string, error)
+	ToAddress(sheetTitle, cellName string) (CellReference, error)
+	Value(ec *Context, cell CellAddress) (Value, error)
+	BoolValue(ec *Context, cell CellAddress) (bool, error)
+	DecimalValue(ec *Context, cell CellAddress) (decimal.Decimal, error)
+	StringValue(ec *Context, cell CellAddress) (string, error)
+	IterateBoolValues(ec *Context, cell, cellTo CellAddress, f func(bool) error) error
+	IterateDecimalValues(ec *Context, cell, cellTo CellAddress, f func(decimal.Decimal) error) error
+	IterateStringValues(ec *Context, cell, cellTo CellAddress, f func(string) error) error
 }
