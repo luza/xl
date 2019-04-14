@@ -6,6 +6,7 @@ import (
 
 	"fmt"
 	"os"
+	"runtime"
 	"runtime/pprof"
 	"strings"
 )
@@ -49,10 +50,14 @@ func (a *App) processCommand(c string) bool {
 		a.cmdDeleteRow()
 	case "deleteCol":
 		a.cmdDeleteCol()
-	case "mprof":
+	case "memProf":
 		a.cmdMemProf()
+	case "memUsage":
+		a.cmdMemUsage()
 	case "go":
 		a.cmdGo(arg1(args))
+	case "xDown":
+		a.cmdXDown()
 	default:
 		a.output.SetStatus(fmt.Sprintf("unknown command %s", c), ui.StatusFlagError)
 	}
@@ -140,7 +145,7 @@ func (a *App) cmdBind(args []string) {
 // cmdCutCell erases the cell (but puts its value to buffer first).
 func (a *App) cmdCutCell() {
 	a.cmdCopyCell()
-	a.doc.CurrentSheet.CellUnderCursor().EraseValue()
+	a.doc.CurrentSheet.CellUnderCursor().SetValueEmpty()
 	a.output.SetDirty(ui.DirtyGrid | ui.DirtyFormulaLine)
 }
 
@@ -195,6 +200,24 @@ func (a *App) cmdMemProf() {
 	_ = f.Close()
 }
 
+func (a *App) cmdMemUsage() {
+	var m runtime.MemStats
+	runtime.ReadMemStats(&m)
+	bToMb := func(b uint64) uint64 {
+		return b / 1024 / 1024
+	}
+	a.output.SetStatus(
+		fmt.Sprintf(
+			"Alloc = %v MiB, TotalAlloc = %v MiB, Sys = %v MiB, NumGC = %v",
+			bToMb(m.Alloc),
+			bToMb(m.TotalAlloc),
+			bToMb(m.Sys),
+			m.NumGC,
+		),
+		0,
+	)
+}
+
 func (a *App) cmdGo(cellName string) {
 	x, y, err := a.doc.FindCell(cellName)
 	if err != nil {
@@ -202,4 +225,17 @@ func (a *App) cmdGo(cellName string) {
 		return
 	}
 	a.moveCursorTo(x, y)
+}
+
+func (a *App) cmdXDown() {
+	a.doc.CurrentSheet.AddXSegment(
+		a.doc.CurrentSheet.Cursor.X,
+		a.doc.CurrentSheet.Cursor.Y,
+		1,
+		a.doc.CurrentSheet.Size.Height-a.doc.CurrentSheet.Cursor.Y,
+		0,
+		0,
+		*a.doc.CurrentSheet.CellUnderCursor(),
+	)
+	a.output.SetDirty(ui.DirtyGrid)
 }

@@ -12,17 +12,17 @@ func TestGuessCellType(t *testing.T) {
 		t           int
 		castedValue interface{}
 	}{
-		{``, CellValueTypeEmpty, nil},
-		{`TRUE`, CellValueTypeBool, true},
-		{`false`, CellValueTypeBool, false},
-		{`0`, CellValueTypeInteger, 0},
-		{`1`, CellValueTypeInteger, 1},
-		{`0.1`, CellValueTypeDecimal, nil},
-		{`1.0`, CellValueTypeDecimal, nil},
-		{`1.0e10`, CellValueTypeDecimal, nil},
-		{`=FUNC()`, CellValueTypeFormula, nil},
-		{`=`, CellValueTypeText, "="},
-		{`abc`, CellValueTypeText, "abc"},
+		{``, cellValueTypeEmpty, nil},
+		{`TRUE`, cellValueTypeBool, true},
+		{`false`, cellValueTypeBool, false},
+		{`0`, cellValueTypeInteger, 0},
+		{`1`, cellValueTypeInteger, 1},
+		{`0.1`, cellValueTypeDecimal, nil},
+		{`1.0`, cellValueTypeDecimal, nil},
+		{`1.0e10`, cellValueTypeDecimal, nil},
+		{`=FUNC()`, cellValueTypeFormula, nil},
+		{`=`, cellValueTypeString, "="},
+		{`abc`, cellValueTypeString, "abc"},
 	}
 	for _, c := range testCases {
 		guessedType, castedValue := guessCellType(c.value)

@@ -44,28 +44,3 @@ func (s *baseSegment) Move(newX, newY int) {
 	s.size.X = newX
 	s.size.Y = newY
 }
-
-// Extrapolation segment.
-
-//type xpSegment struct {
-//	baseSegment
-//
-//	Xps [][]xp1
-//}
-
-// xp1 is one-dimensional extrapolation rule.
-//type xp1 struct {
-//	direction int
-//	rule      string
-//}
-
-//func newXpSegment(x, y, w, h int) Segment {
-//	return &xpSegment{
-//		baseSegment: baseSegment{
-//			X:      x,
-//			Y:      y,
-//			Width:  w,
-//			Height: h,
-//		},
-//	}
-//}

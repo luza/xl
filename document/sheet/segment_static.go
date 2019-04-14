@@ -22,7 +22,7 @@ func newStaticSegment(x, y, w, h int, cells [][]Cell) Segment {
 	}
 }
 
-// cell returns cell under the given X and Y.
+// Cell returns cell under the given X and Y.
 func (s *staticSegment) Cell(x, y int) *Cell {
 	return &s.Cells[x-s.size.X][y-s.size.Y]
 }

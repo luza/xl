@@ -84,16 +84,36 @@ func (s *Sheet) RowSize(n int) int {
 }
 
 // AddStaticSegment creates a new Static segment and will with the given cells matrix.
-// TODO: check intersections. Will be such a case?
-// TODO: new segment need to be merged with the existing if possible
+// TODO(high): check intersections
+// TODO(med): new segment needs to be merged with the existing if possible
 func (s *Sheet) AddStaticSegment(x, y, width, height int, cells [][]Cell) Segment {
 	if len(cells) == 0 || len(cells[0]) == 0 {
-		return nil
+		panic("empty cells")
 	}
 	segment := newStaticSegment(x, y, width, height, cells)
 	s.Segments = append(s.Segments, segment)
+	s.adjustSheetSize(x, y, width, height)
+	return segment
+}
 
-	// adjust sheet size
+// TODO(high): check intersections
+func (s *Sheet) AddXSegment(x, y, width, height, keyX, keyY int, keyCell Cell) Segment {
+	segment := newXSegment(x, y, width, height, keyX, keyY, keyCell)
+	s.Segments = append(s.Segments, segment)
+	s.adjustSheetSize(x, y, width, height)
+	return segment
+}
+
+// Cell returns the cell for given X and Y.
+func (s *Sheet) Cell(x, y int) *Cell {
+	if segment := s.FindSegment(x, y); segment != nil {
+		return segment.Cell(x, y)
+	}
+	return nil
+}
+
+// adjustSheetSize enlarges sheet size to able to contain the given rect.
+func (s *Sheet) adjustSheetSize(x, y, width, height int) {
 	if x < s.Size.X {
 		s.Size.X = x
 	}
@@ -106,16 +126,6 @@ func (s *Sheet) AddStaticSegment(x, y, width, height int, cells [][]Cell) Segmen
 	if y+height > s.Size.Height {
 		s.Size.Height = y + height
 	}
-
-	return segment
-}
-
-// cell returns the cell for given X and Y.
-func (s *Sheet) Cell(x, y int) *Cell {
-	if segment := s.FindSegment(x, y); segment != nil {
-		return segment.Cell(x, y)
-	}
-	return nil
 }
 
 // CellUnderCursor returns the cell the cursor is pointing to.
