@@ -39,7 +39,7 @@ func (t *Termbox) RefreshView() {
 	if t.dirty&ui.DirtyFormulaLine > 0 {
 		formulaLineView := sheetView.FormulaLineView
 		currentCellName := t.dataDelegate.CellView(sheetView.Cursor.X, sheetView.Cursor.Y).Name
-		t.drawCell(0, 0, t.screenWidth, formulaLineHeight, currentCellName, colorYellow, colorBlack)
+		t.drawCell(0, 0, t.screenWidth, formulaLineHeight, currentCellName, tcell.ColorYellow, tcell.ColorBlack)
 		text := formulaLineView.DisplayText
 		if formulaLineView.Expression != nil {
 			var buf bytes.Buffer
@@ -48,7 +48,7 @@ func (t *Termbox) RefreshView() {
 			})
 			text = buf.String()
 		}
-		t.drawCell(len(currentCellName)+1, 0, t.screenWidth, formulaLineHeight, text, colorWhite, colorBlack)
+		t.drawCell(len(currentCellName)+1, 0, t.screenWidth, formulaLineHeight, text, tcell.ColorWhite, tcell.ColorBlack)
 	}
 
 	// vertical ruler
@@ -59,11 +59,11 @@ func (t *Termbox) RefreshView() {
 		for screenY < t.screenHeight-statusLineHeight {
 			rowView := t.dataDelegate.RowView(cellY)
 			heightChars := pixelsToCharsY(rowView.Height)
-			fg := colorWhite
+			fg := tcell.ColorWhite
 			if cellY == sheetView.Cursor.Y {
-				fg = colorYellow
+				fg = tcell.ColorYellow
 			}
-			t.drawCell(0, screenY, len(rowView.Name)+1+1, heightChars, rowView.Name, fg, colorBlack)
+			t.drawCell(0, screenY, len(rowView.Name)+1+1, heightChars, rowView.Name, fg, tcell.ColorBlack)
 			if len(rowView.Name)+1 > t.vRulerWidth {
 				t.vRulerWidth = len(rowView.Name) + 1
 			}
@@ -81,11 +81,11 @@ func (t *Termbox) RefreshView() {
 		for screenX < t.screenWidth {
 			colView := t.dataDelegate.ColView(cellX)
 			widthChars := pixelsToCharsX(colView.Width)
-			fg := colorWhite
+			fg := tcell.ColorWhite
 			if cellX == sheetView.Cursor.X {
-				fg = colorYellow
+				fg = tcell.ColorYellow
 			}
-			t.drawCell(screenX, screenY, widthChars, hRulerHeight, colView.Name, fg, colorBlack)
+			t.drawCell(screenX, screenY, widthChars, hRulerHeight, colView.Name, fg, tcell.ColorBlack)
 			cellX++
 			screenX += widthChars
 		}
@@ -105,12 +105,12 @@ func (t *Termbox) RefreshView() {
 				c := t.dataDelegate.CellView(cellX, cellY)
 				text := c.DisplayText
 
-				bgColor := colorBlack
+				bgColor := tcell.ColorBlack
 				if cellX%2 != 0 || cellY%2 == 0 {
-					bgColor = colorGrey236
+					bgColor = tcell.Color235
 				}
 				if cellX%2 != 0 && cellY%2 == 0 {
-					bgColor = colorGrey239
+					bgColor = tcell.Color238
 				}
 				if cellX == sheetView.Cursor.X && cellY == sheetView.Cursor.Y {
 					t.lastCursorX = screenX
@@ -119,9 +119,9 @@ func (t *Termbox) RefreshView() {
 				}
 				if c.Error != nil {
 					text = *c.Error
-					bgColor = colorRed
+					bgColor = tcell.ColorRed
 				}
-				t.drawCell(screenX, screenY, widthChars, heightChars, text, colorGrey, bgColor)
+				t.drawCell(screenX, screenY, widthChars, heightChars, text, tcell.ColorSilver, bgColor)
 				cellX++
 				screenX += widthChars
 			}
@@ -135,19 +135,19 @@ func (t *Termbox) RefreshView() {
 		screenX := 0
 		screenY := t.screenHeight - statusLineHeight
 		for i, s := range docView.Sheets {
-			bgColor := colorBlack
-			fgColor := colorWhite
+			bgColor := tcell.ColorBlack
+			fgColor := tcell.ColorWhite
 			if i == docView.CurrentSheetIdx {
-				bgColor = colorWhite
-				fgColor = colorBlack
+				bgColor = tcell.ColorWhite
+				fgColor = tcell.ColorBlack
 			}
 			t.drawCell(screenX, screenY, sheetNameMaxWidth, statusLineHeight, s, fgColor, bgColor)
 			screenX += sheetNameMaxWidth
 		}
-		fgColor := colorWhite
-		bgColor := colorBlack
+		fgColor := tcell.ColorWhite
+		bgColor := tcell.ColorBlack
 		if t.statusFlags&ui.StatusFlagError > 0 {
-			bgColor = colorRed
+			bgColor = tcell.ColorRed
 		}
 		t.drawCell(screenX, screenY, t.screenWidth-screenX, statusLineHeight, t.statusMessage, fgColor, bgColor)
 	}
@@ -168,7 +168,7 @@ func (t *Termbox) drawCell(x int, y int, width int, height int, text string, fg 
 			if cursorY == y && indexX < textLen {
 				if textLen > width && cursorX == x+width-1 {
 					char = '>'
-					st = st.Foreground(colorYellow)
+					st = st.Foreground(tcell.ColorYellow)
 				} else {
 					char = textAsRunes[indexX]
 				}

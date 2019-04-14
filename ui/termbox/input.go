@@ -39,8 +39,8 @@ func (t *Termbox) EditCellValue(oldValue string) (string, error) {
 		Width:    w,
 		Height:   formulaLineHeight,
 		MaxLines: 1,
-		FgColor:  colorWhite,
-		BgColor:  colorBlack,
+		FgColor:  tcell.ColorWhite,
+		BgColor:  tcell.ColorBlack,
 		Value:    oldValue,
 	})
 	if err != nil {
@@ -51,7 +51,7 @@ func (t *Termbox) EditCellValue(oldValue string) (string, error) {
 
 func (t *Termbox) InputCommand() (string, error) {
 	w, h := t.screen.Size()
-	t.drawCell(0, h-statusLineHeight, 1, statusLineHeight, ":", colorWhite, colorBlack)
+	t.drawCell(0, h-statusLineHeight, 1, statusLineHeight, ":", tcell.ColorWhite, tcell.ColorBlack)
 	v, err := t.enterEditorMode(&editorConfig{
 		Tbox:     t,
 		X:        1,
@@ -59,8 +59,8 @@ func (t *Termbox) InputCommand() (string, error) {
 		Width:    w - 1,
 		Height:   statusLineHeight,
 		MaxLines: 1,
-		FgColor:  colorWhite,
-		BgColor:  colorBlack,
+		FgColor:  tcell.ColorWhite,
+		BgColor:  tcell.ColorBlack,
 	})
 	if err != nil {
 		return "", err
