@@ -9,6 +9,22 @@ import (
 	"github.com/shopspring/decimal"
 )
 
+// Ячейка - это структура, описывающая одну клетку листа.
+// В ячейке хранится сырое значение, введенное пользователем или прочитанное из
+// файла, а также преобразованное значение разного типа в зависимости от типа ячейки.
+//
+// В начальном состоянии ячейка имеет неопределнный тип и содержит только сырое значение.
+// При первом обращении на основе сырого значения определяется тип ячейки и внутренняя структура
+// преобразовывается в одну из структур, соответствующую определенному типу.
+// В новую структуру сохраняется значение, сконвертированное в определенный тип.
+//
+// Если значение ячейки - формула, то формула парсится и хранится в ячейке в виде Выражения (Expression),
+// функции, которая производит вычисления над Значениями в соответствии с заданной формулой, и
+// ссылок, которые хранят зависимость этой ячейки от значений других ячеек, если они заданы в формуле.
+// При запросе значения ячейки, если она задана формулой, в которой есть ссылки на другие значения,
+// это значение вычисляется; для этого запрашивается (и вычисляется, если требуется) значение всех
+// ссылаемых ячеек и выполняются арифметические операции, заданные формулой.
+
 // Alloc = 1799 MiB, TotalAlloc = 2241 MiB, Sys = 2326 MiB, NumGC = 13
 // Alloc = 1026 MiB, TotalAlloc = 1132 MiB, Sys = 1136 MiB, NumGC = 11
 
@@ -23,10 +39,9 @@ const (
 
 type Cell struct {
 	rawValue string
-	v        interface{}
+	// Внутренняя структура ячейки. Разная для разных типов.
+	v interface{}
 }
-
-type emptyCell struct{}
 
 type untypedCell struct{}
 
@@ -48,14 +63,16 @@ type formulaCell struct {
 	FormulaValue formula.Function
 	Expression   *formula.Expression
 	Refs         []ref
+	offsetX      int
+	offsetY      int
 }
 
+// Создает пустую ячейку.
 func NewCellEmpty() *Cell {
-	return &Cell{
-		v: emptyCell{},
-	}
+	return &Cell{}
 }
 
+// Создает ячейку без определенного типа, фактический тип будет определен позднее.
 func NewCellUntyped(v string) *Cell {
 	return &Cell{
 		rawValue: v,
@@ -63,21 +80,33 @@ func NewCellUntyped(v string) *Cell {
 	}
 }
 
-//func NewCellAsCopyWithOffset(sourceCell *Cell, offsetX, offsetY int) *Cell {
-// make a copy
-//c := *sourceCell
-//// expression pointer is shared, but refs are copied
-//copy(c.refs, sourceCell.refs)
-//c.offsetX = offsetX
-//c.offsetY = offsetY
-//	return &c
-//}
+// Копирует значение ячейки и задает полученной копии смещение.
+// Смещение используется при разрешении Ссылок, чтобы сдвинуть их относительно
+// ключевой ячейки х-сегмента.
+func NewCellAsCopyWithOffset(sourceCell *Cell, offsetX, offsetY int) *Cell {
+	if v, ok := sourceCell.v.(formulaCell); ok {
+		return &Cell{
+			// make a copy
+			v: formulaCell{
+				FormulaValue: v.FormulaValue,
+				Expression:   v.Expression,
+				Refs:         v.Refs,
+				offsetX:      offsetX,
+				offsetY:      offsetY,
+			},
+		}
+	} else {
+		return sourceCell
+	}
+}
 
 // RawValue returns raw cell value as string. No evaluation performed.
 func (c *Cell) RawValue() string {
 	return c.rawValue
 }
 
+// Возвращает выражение, построееное по формуле.
+// Если в формуле есть Переменные, то они обновляются по актуальным значениям Ссылок.
 func (c *Cell) Expression(ec *eval.Context) *formula.Expression {
 	switch v := c.v.(type) {
 	case untypedCell:
@@ -86,7 +115,7 @@ func (c *Cell) Expression(ec *eval.Context) *formula.Expression {
 		}
 		return c.Expression(ec)
 	case formulaCell:
-		if err := updateVars(ec, v.Expression, v.Refs); err != nil {
+		if err := updateVars(ec, v.Expression, v.Refs, v.offsetX, v.offsetY); err != nil {
 			return nil
 		}
 		return v.Expression
@@ -97,9 +126,10 @@ func (c *Cell) Expression(ec *eval.Context) *formula.Expression {
 
 // BoolValue returns evaluated cell rawValue as boolean.
 func (c *Cell) BoolValue(ec *eval.Context) (bool, error) {
-	switch v := c.v.(type) {
-	case emptyCell:
+	if c.v == nil {
 		return false, nil
+	}
+	switch v := c.v.(type) {
 	case untypedCell:
 		if err := c.evaluateType(ec); err != nil {
 			return false, err
@@ -114,7 +144,7 @@ func (c *Cell) BoolValue(ec *eval.Context) (bool, error) {
 	case decimalCell:
 		return !v.Value.Equal(decimal.Zero), nil
 	case formulaCell:
-		val, err := v.FormulaValue(ec, refsToValues(v.Refs))
+		val, err := v.FormulaValue(ec, refsToValues(v.Refs, v.offsetX, v.offsetY))
 		if err != nil {
 			return false, err
 		}
@@ -126,9 +156,10 @@ func (c *Cell) BoolValue(ec *eval.Context) (bool, error) {
 
 // DecimalValue returns evaluated cell value as decimal.
 func (c *Cell) DecimalValue(ec *eval.Context) (decimal.Decimal, error) {
-	switch v := c.v.(type) {
-	case emptyCell:
+	if c.v == nil {
 		return decimal.Zero, nil
+	}
+	switch v := c.v.(type) {
 	case untypedCell:
 		if err := c.evaluateType(ec); err != nil {
 			return decimal.Zero, err
@@ -143,7 +174,7 @@ func (c *Cell) DecimalValue(ec *eval.Context) (decimal.Decimal, error) {
 	case decimalCell:
 		return v.Value, nil
 	case formulaCell:
-		val, err := v.FormulaValue(ec, refsToValues(v.Refs))
+		val, err := v.FormulaValue(ec, refsToValues(v.Refs, v.offsetX, v.offsetY))
 		if err != nil {
 			return decimal.Zero, err
 		}
@@ -155,9 +186,10 @@ func (c *Cell) DecimalValue(ec *eval.Context) (decimal.Decimal, error) {
 
 // StringValue returns evaluated cell rawValue as string.
 func (c *Cell) StringValue(ec *eval.Context) (string, error) {
-	switch v := c.v.(type) {
-	case emptyCell:
+	if c.v == nil {
 		return "", nil
+	}
+	switch v := c.v.(type) {
 	case untypedCell:
 		if err := c.evaluateType(ec); err != nil {
 			return "", err
@@ -172,7 +204,7 @@ func (c *Cell) StringValue(ec *eval.Context) (string, error) {
 	case decimalCell:
 		return c.rawValue, nil
 	case formulaCell:
-		val, err := v.FormulaValue(ec, refsToValues(v.Refs))
+		val, err := v.FormulaValue(ec, refsToValues(v.Refs, v.offsetX, v.offsetY))
 		if err != nil {
 			return "", err
 		}
@@ -182,10 +214,12 @@ func (c *Cell) StringValue(ec *eval.Context) (string, error) {
 	}
 }
 
+// Возвращает значение ячейки как Значение для формулы.
 func (c *Cell) Value(ec *eval.Context) (eval.Value, error) {
-	switch v := c.v.(type) {
-	case emptyCell:
+	if c.v == nil {
 		return eval.NewEmptyValue(), nil
+	}
+	switch v := c.v.(type) {
 	case untypedCell:
 		if err := c.evaluateType(ec); err != nil {
 			return eval.NewEmptyValue(), err
@@ -200,15 +234,17 @@ func (c *Cell) Value(ec *eval.Context) (eval.Value, error) {
 	case decimalCell:
 		return eval.NewDecimalValue(v.Value), nil
 	case formulaCell:
-		return v.FormulaValue(ec, refsToValues(v.Refs))
+		return v.FormulaValue(ec, refsToValues(v.Refs, v.offsetX, v.offsetY))
 	default:
 		panic("unsupported type")
 	}
 }
 
+// Сбрасывает значение ячейки на пустое.
+// FIXME: оставляет осиротевшие Ссылки в refRegistry.
 func (c *Cell) SetValueEmpty() {
 	c.rawValue = ""
-	c.v = emptyCell{}
+	c.v = nil
 }
 
 // SetValueUntyped fill new cell value with no any type associated with it.
@@ -218,11 +254,12 @@ func (c *Cell) SetValueUntyped(v string) {
 	c.v = untypedCell{}
 }
 
+// Вычисляет тип ячейки на осное ее сырого значение и крнвертирует внутреннюю структуру в нужный тип.
 func (c *Cell) evaluateType(ec *eval.Context) error {
 	t, castedV := guessCellType(c.rawValue)
 	switch t {
 	case cellValueTypeEmpty:
-		c.v = emptyCell{}
+		c.v = nil
 	case cellValueTypeString:
 		c.v = stringCell{}
 	case cellValueTypeInteger:

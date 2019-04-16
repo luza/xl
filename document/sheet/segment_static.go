@@ -2,6 +2,8 @@ package sheet
 
 // Static segment.
 
+// Статичный сегмент состоит из клеток с фиксированным значением.
+
 // staticSegment is a segment of static values.
 type staticSegment struct {
 	baseSegment

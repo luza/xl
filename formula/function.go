@@ -8,6 +8,8 @@ import (
 	"github.com/shopspring/decimal"
 )
 
+// В этом файле собраны встренные функции, которые можно использовать в формулах.
+
 const maxArguments = 1000
 
 type Function func(*eval.Context, []eval.Value) (eval.Value, error)

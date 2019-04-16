@@ -1,9 +1,19 @@
 package eval
 
+// Контекст вычисления. Экземпляр этой структуры програсывается через все вычисления
+// в рамках одной формулы и служит двум целям:
+// - считать посещенные ячейки при переходе по Ссылкам, чтобы пресекать циклические ссылки
+// - предоставлять доступ к документу при разрешении Ссылок
+
 type Context struct {
-	DataProvider    RefRegistryInterface
+	// Это делегат, предоставляющий методы разрешения ссылок.
+	DataProvider RefRegistryInterface
+
+	// Лист, в контексте которого делается вычисление формулы.
 	CurrentSheetIdx int
-	visitedCells    []CellAddress
+
+	// Слайс для хранения посещенных ячеек.
+	visitedCells []CellAddress
 }
 
 func NewContext(dp RefRegistryInterface, currentSheetIdx int) *Context {

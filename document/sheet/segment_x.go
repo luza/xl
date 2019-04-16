@@ -2,11 +2,21 @@ package sheet
 
 // Extrapolation segment.
 
+// Когда пользователь растягивает ячейки вниз, вправо, влево или вверх, на месте
+// выделенных ячеек возникает экстраполяционный сегмент (xSegment). Одна из принадлежащих
+// ему ячеек объявляется ключевой, и для нее задается значение. Остальные ячейки сегмента
+// вычисляются в момент запроса; для вычисления произвольной клетки сегмента берется
+// значение его ключевой ячейки, ссылки в которой сдвинуты соразмерно смещению
+// запрошенной ячейки относительно ключевой.
+
 type xSegment struct {
 	baseSegment
 
-	keyX    int
-	keyY    int
+	// Координаты ключевой ячейки внутри сегмента.
+	keyX int
+	keyY int
+
+	// Значение ключевой ячейки.
 	keyCell Cell
 }
 
@@ -32,9 +42,7 @@ func (s *xSegment) Cell(x, y int) *Cell {
 	if localX == s.keyX && localY == s.keyY {
 		return &s.keyCell
 	}
-	//FIXME
-	//return NewCellAsCopyWithOffset(&s.keyCell, localX-s.keyX, localY-s.keyY)
-	return nil
+	return NewCellAsCopyWithOffset(&s.keyCell, localX-s.keyX, localY-s.keyY)
 }
 
 // SetCell fills new key cell.

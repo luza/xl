@@ -4,6 +4,8 @@ import (
 	"strconv"
 )
 
+// Методы, позволящие восстановить текст формулы из Выражения.
+
 type OutputFunc func(string, int)
 
 const (

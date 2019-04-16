@@ -6,6 +6,8 @@ import (
 	"github.com/shopspring/decimal"
 )
 
+// Методые для создания функции, которая производит вычисления, описанные формулой.
+
 func (e *Expression) BuildFunc() (Function, int) {
 	return e.Equality.BuildFunc()
 }

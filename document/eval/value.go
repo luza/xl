@@ -13,6 +13,10 @@ const (
 	TypeRangeRef
 )
 
+// Значение - это единица информация, над которой производятся вычисления в формулах.
+// Значение может быть пустым, быть константным заначением одного из трех типов, или хранить в себе ссылку
+// на ячейку или диапазон ячеек.
+
 type Value interface {
 	Type() int
 	BoolValue(*Context) (bool, error)
@@ -62,6 +66,7 @@ func NewStringValue(v string) Value {
 	}
 }
 
+// TODO(low): accept address instead of reference?
 func NewRefValue(cell CellReference, cellTo *CellReference) Value {
 	t := TypeRef
 	if cellTo != nil {
@@ -78,6 +83,7 @@ func (v staticValue) Type() int {
 	return v.valueType
 }
 
+// Возвращает щначение, приведенное к булевому типу.
 func (v staticValue) BoolValue(ec *Context) (bool, error) {
 	switch v.valueType {
 	case TypeEmpty:
@@ -100,6 +106,7 @@ func (v staticValue) BoolValue(ec *Context) (bool, error) {
 	}
 }
 
+// Возвращает значение, приведенное к числовому типу.
 func (v staticValue) DecimalValue(ec *Context) (decimal.Decimal, error) {
 	switch v.valueType {
 	case TypeEmpty:
@@ -126,6 +133,7 @@ func (v staticValue) DecimalValue(ec *Context) (decimal.Decimal, error) {
 	}
 }
 
+// Возвращает значение, приведенное к строке.
 func (v staticValue) StringValue(ec *Context) (string, error) {
 	switch v.valueType {
 	case TypeEmpty:

@@ -7,6 +7,10 @@ import (
 	"github.com/gdamore/tcell"
 )
 
+// Идея в том, чтобы реализация input/output была подключаемой.
+// Поэтому вся реализация собрана в отдельном пакете termbox, а интерфейс взаимодействия с этим
+// пакетом описан в InputInterface и OutputInterface.
+
 const (
 	DirtyHRuler = 1 << iota
 	DirtyVRuler

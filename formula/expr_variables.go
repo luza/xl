@@ -1,5 +1,7 @@
 package formula
 
+// Достает Переменные из Выражения.
+
 func (e *Expression) Variables() []*Variable {
 	return e.Equality.Variables()
 }
